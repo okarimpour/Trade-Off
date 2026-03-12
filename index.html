@@ -7,183 +7,225 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+  /* ─── Design System ─── */
   :root {
-    --primary: #2c3e50;
-    --primary-light: #34495e;
-    --accent: #3498db;
-    --accent-dark: #2980b9;
-    --success: #27ae60;
-    --warning: #f39c12;
-    --danger: #e74c3c;
-    --bg: #f5f6fa;
-    --card: #ffffff;
-    --border: #dcdde1;
-    --text: #2c3e50;
-    --text-light: #7f8c8d;
-    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --ink: #ece5dd;
+    --ink-soft: #b8ada1;
+    --ink-muted: #7d746a;
+    --surface: #1a1613;
+    --card: #242019;
+    --line: #3a342c;
+    --line-soft: #2e2923;
+    --accent: #da7756;
+    --accent-hover: #e88b6c;
+    --red: #d4594e;
+    --red-soft: #3a2422;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--ink); line-height: 1.55; font-size: 13px; -webkit-font-smoothing: antialiased; }
 
-  header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
-  header .left h1 { font-size: 1.3rem; font-weight: 600; }
-  header .left p { font-size: 0.8rem; opacity: 0.8; }
-  header .right { display: flex; gap: 0.5rem; }
-  header .hbtn { padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
-  header .hbtn:hover { background: rgba(255,255,255,0.1); }
+  /* ─── Header ─── */
+  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 0.65rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+  header .left h1 { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; }
+  header .left p { font-size: 0.72rem; color: var(--ink-muted); margin-top: 1px; }
+  header .right { display: flex; gap: 0.4rem; }
+  header .hbtn { padding: 0.3rem 0.7rem; border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  header .hbtn:hover { border-color: var(--ink-muted); color: var(--ink); }
 
-  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+  .container { max-width: 1060px; margin: 0 auto; padding: 1.25rem 1.5rem; }
 
-  /* Stepper */
-  .stepper { display: flex; justify-content: center; gap: 0; margin-bottom: 1.5rem; background: var(--card); border-radius: 12px; padding: 0.8rem 1.5rem; box-shadow: var(--shadow); }
-  .step-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 0.85rem; color: var(--text-light); }
-  .step-item:hover { background: var(--bg); }
-  .step-item.active { color: var(--accent); font-weight: 600; }
-  .step-item.completed { color: var(--success); }
-  .step-num { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; border: 2px solid var(--border); }
+  /* ─── Stepper ─── */
+  .stepper { display: flex; justify-content: center; gap: 0; margin-bottom: 1.25rem; background: var(--card); border-radius: var(--radius); padding: 0.5rem 1rem; border: 1px solid var(--line); }
+  .step-item { display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.7rem; cursor: pointer; border-radius: 6px; transition: all 0.15s; font-size: 0.78rem; color: var(--ink-muted); font-weight: 500; }
+  .step-item:hover { background: var(--line-soft); color: var(--ink-soft); }
+  .step-item.active { color: var(--accent); }
+  .step-item.completed { color: var(--ink-soft); }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; border: 1.5px solid var(--line); color: var(--ink-muted); }
   .step-item.active .step-num { background: var(--accent); color: white; border-color: var(--accent); }
-  .step-item.completed .step-num { background: var(--success); color: white; border-color: var(--success); }
-  .step-connector { width: 40px; height: 2px; background: var(--border); align-self: center; }
-  .step-connector.completed { background: var(--success); }
+  .step-item.completed .step-num { background: var(--ink-muted); color: var(--surface); border-color: var(--ink-muted); }
+  .step-connector { width: 28px; height: 1.5px; background: var(--line); align-self: center; }
+  .step-connector.completed { background: var(--ink-muted); }
 
-  .card { background: var(--card); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
-  .card h2 { font-size: 1.05rem; margin-bottom: 0.2rem; color: var(--primary); }
-  .card .subtitle { font-size: 0.82rem; color: var(--text-light); margin-bottom: 1rem; }
+  /* ─── Card ─── */
+  .card { background: var(--card); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; border: 1px solid var(--line); }
+  .card h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.1rem; letter-spacing: -0.01em; }
+  .card .subtitle { font-size: 0.75rem; color: var(--ink-muted); margin-bottom: 0.75rem; }
 
-  label { font-size: 0.82rem; font-weight: 500; display: block; margin-bottom: 0.2rem; }
-  input, select { padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; font-family: inherit; transition: border-color 0.2s; width: 100%; }
-  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
-  .inline-fields { display: flex; gap: 1rem; flex-wrap: wrap; }
-  .inline-fields .field { flex: 1; min-width: 120px; }
+  /* ─── Forms ─── */
+  label { font-size: 0.72rem; font-weight: 500; display: block; margin-bottom: 0.15rem; color: var(--ink-soft); }
+  input, select { padding: 0.38rem 0.5rem; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; font-family: inherit; transition: all 0.15s; width: 100%; background: var(--line-soft); color: var(--ink); color-scheme: dark; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(218,119,86,0.15); }
+  .inline-fields { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .inline-fields .field { flex: 1; min-width: 100px; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  th, td { padding: 0.5rem 0.6rem; text-align: center; border: 1px solid var(--border); }
-  th { background: var(--primary); color: white; font-weight: 500; font-size: 0.78rem; }
-  td input, td select { border: none; text-align: center; padding: 0.25rem; background: transparent; font-size: 0.82rem; width: 100%; }
-  td input:focus, td select:focus { background: #eef5ff; box-shadow: none; }
-  tr:nth-child(even) { background: #f9f9fb; }
-  tr:hover { background: #eef2f7; }
-  .rank-cell { background: #d4edda !important; font-weight: 700; color: var(--success); }
-  .score-cell { background: #d1ecf1 !important; font-weight: 600; color: #0c5460; }
+  /* ─── Tables ─── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 0.4rem 0.5rem; text-align: center; border: 1px solid var(--line); }
+  th { background: var(--line); color: var(--ink); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.01em; }
+  td input, td select { border: none; text-align: center; padding: 0.2rem; background: transparent; font-size: 13px; width: 100%; }
+  td input:focus, td select:focus { background: rgba(218,119,86,0.08); box-shadow: none; }
+  tr:nth-child(even) { background: var(--line-soft); }
+  tr:hover { background: var(--line-soft); }
+  .rank-cell { background: var(--line-soft) !important; font-weight: 600; color: var(--ink); }
+  .score-cell { background: var(--line-soft) !important; font-weight: 600; color: var(--ink); }
 
-  .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  /* ─── Buttons ─── */
+  .btn { padding: 0.4rem 0.9rem; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: inherit; }
   .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: var(--accent-dark); }
-  .btn-secondary { background: var(--border); color: var(--text); }
-  .btn-secondary:hover { background: #bdc3c7; }
-  .btn-success { background: var(--success); color: white; }
-  .btn-success:hover { background: #219a52; }
-  .btn-danger { background: var(--danger); color: white; }
-  .btn-danger:hover { background: #c0392b; }
-  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
-  .btn-group { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end; flex-wrap: wrap; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: var(--line-soft); color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn-secondary:hover { background: var(--line); color: var(--ink); }
+  .btn-success { background: var(--accent); color: white; }
+  .btn-success:hover { background: var(--accent-hover); }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-sm { padding: 0.22rem 0.55rem; font-size: 0.72rem; }
+  .btn-group { display: flex; gap: 0.5rem; margin-top: 1.25rem; justify-content: flex-end; flex-wrap: wrap; }
 
-  /* Validation */
-  .validation-bar { padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-  .validation-bar.error { background: #fdecea; border: 1px solid #f5c6cb; color: #721c24; }
-  .validation-bar.warning { background: #fff8e1; border: 1px solid #ffeeba; color: #856404; }
-  .validation-bar.ok { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-  .weight-indicator { font-size: 0.78rem; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 600; display: inline-block; margin-left: 0.5rem; }
+  /* ─── Validation ─── */
+  .validation-bar { padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.72rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.35rem; }
+  .validation-bar.error { background: var(--red-soft); border: 1px solid rgba(212,89,78,0.2); color: #e87c72; }
+  .validation-bar.warning { background: var(--line-soft); border: 1px solid var(--line); color: var(--ink-soft); }
+  .validation-bar.ok { background: var(--line-soft); border: 1px solid var(--line); color: var(--ink-muted); }
+  .weight-indicator { font-size: 0.68rem; padding: 0.1rem 0.4rem; border-radius: 10px; font-weight: 600; display: inline-block; margin-left: 0.3rem; }
 
-  /* Method cards */
-  .method-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
-  .method-card { border: 2px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; }
-  .method-card:hover { border-color: var(--accent); }
-  .method-card.selected { border-color: var(--accent); background: #eef5ff; }
-  .method-card .check { position: absolute; top: 0.5rem; right: 0.5rem; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+  /* ─── Method Cards ─── */
+  .method-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.6rem; }
+  .method-card { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 0.8rem; cursor: pointer; transition: all 0.15s; position: relative; }
+  .method-card:hover { border-color: var(--ink-muted); background: var(--line-soft); }
+  .method-card.selected { border-color: var(--accent); background: rgba(218,119,86,0.06); }
+  .method-card .check { position: absolute; top: 0.5rem; right: 0.5rem; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: transparent; }
   .method-card.selected .check { background: var(--accent); border-color: var(--accent); color: white; }
-  .method-card h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
-  .method-card p { font-size: 0.75rem; color: var(--text-light); line-height: 1.3; }
+  .method-card h3 { font-size: 0.78rem; margin-bottom: 0.1rem; font-weight: 600; }
+  .method-card p { font-size: 0.68rem; color: var(--ink-muted); line-height: 1.35; }
 
-  .tag { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem; }
-  .tag-simple { background: #d4edda; color: #155724; }
-  .tag-moderate { background: #fff3cd; color: #856404; }
-  .tag-advanced { background: #d1ecf1; color: #0c5460; }
+  .tag { display: inline-block; padding: 0.08rem 0.35rem; border-radius: 4px; font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.25rem; }
+  .tag-simple { background: var(--line-soft); color: var(--ink-muted); }
+  .tag-moderate { background: var(--line-soft); color: var(--ink-muted); }
+  .tag-advanced { background: var(--line-soft); color: var(--ink-muted); }
 
-  /* Info/Learn more panels */
-  .info-box { background: #eef5ff; border-left: 3px solid var(--accent); padding: 0.6rem 0.9rem; border-radius: 0 6px 6px 0; font-size: 0.8rem; margin: 0.75rem 0; color: var(--primary-light); }
-  .learn-toggle { font-size: 0.78rem; color: var(--accent); cursor: pointer; text-decoration: underline; margin-top: 0.3rem; display: inline-block; }
-  .learn-content { display: none; background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; font-size: 0.8rem; line-height: 1.6; }
+  /* ─── Info / Learn More ─── */
+  .info-box { background: var(--line-soft); border-left: 2px solid var(--ink-muted); padding: 0.45rem 0.7rem; border-radius: 0 6px 6px 0; font-size: 0.72rem; margin: 0.4rem 0; color: var(--ink-soft); }
+  .learn-toggle { font-size: 0.68rem; color: var(--ink-muted); cursor: pointer; text-decoration: underline; margin-top: 0.25rem; display: inline-block; }
+  .learn-toggle:hover { color: var(--ink-soft); }
+  .learn-content { display: none; background: var(--line-soft); border: 1px solid var(--line); border-radius: 6px; padding: 0.65rem; margin-top: 0.35rem; font-size: 0.72rem; line-height: 1.5; }
   .learn-content.open { display: block; }
-  .learn-content h4 { font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--primary); }
-  .learn-content ul { margin: 0.3rem 0 0.5rem 1.2rem; }
-  .learn-content li { margin-bottom: 0.2rem; }
+  .learn-content h4 { font-size: 0.75rem; margin-bottom: 0.2rem; font-weight: 600; }
+  .learn-content ul { margin: 0.15rem 0 0.3rem 1rem; }
+  .learn-content li { margin-bottom: 0.1rem; }
 
-  .config-panel { border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem; background: #fafbfc; }
-  .config-panel h3 { font-size: 0.92rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  /* ─── Config ─── */
+  .config-panel { border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin-bottom: 0.65rem; background: var(--card); }
+  .config-panel h3 { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--line); }
 
-  .results-section { margin-bottom: 1.5rem; }
-  .results-section h3 { font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+  /* ─── Results ─── */
+  .results-section { margin-bottom: 1.25rem; }
+  .results-section h3 { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.35rem; }
+  .ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; }
+  .rank-1 { background: var(--accent); color: white; }
+  .rank-2 { background: var(--ink-muted); color: var(--surface); }
+  .rank-3 { background: var(--line); color: var(--ink-soft); }
+  .rank-other { background: var(--line); color: var(--ink-muted); }
+  .comparison-table .best-rank { background: var(--line-soft); font-weight: 600; }
 
-  .ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 700; color: white; }
-  .rank-1 { background: #f1c40f; color: #333; }
-  .rank-2 { background: #95a5a6; }
-  .rank-3 { background: #cd6133; }
-  .rank-other { background: var(--text-light); }
+  /* ─── Charts ─── */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.65rem; margin-top: 0.65rem; }
+  .chart-container { background: var(--line-soft); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem; }
 
-  .comparison-table .best-rank { background: #d4edda; font-weight: 700; }
+  /* ─── SAU Config ─── */
+  .sau-config-row { padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+  .sau-config-row:last-child { border-bottom: none; }
+  .sau-config-row .field { min-width: 80px; }
+  .sau-config-row label { font-size: 0.72rem; display: block; margin-bottom: 0.1rem; }
+  .sau-config-row .sau-controls { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .sau-preview-wrap { flex: 1; min-width: 200px; height: 180px; }
+  .sau-preview-wrap canvas { display: block; width: 100%; height: 100%; border: 1px solid var(--line); border-radius: 0; background: var(--line-soft); }
 
-  .chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
-  .chart-container { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+  /* ─── Table: [× col] [table] [+ col] ─── */
+  .table-wrap { display: flex; align-items: stretch; }
+  .table-core { flex: 1; min-width: 0; overflow-x: auto; }
+  .tbl-side-col { display: flex; flex-direction: column; }
+  .tbl-side-col.left { padding-right: 3px; gap: 1px; }
+  .tbl-side-col.right { padding-left: 3px; }
 
-  .sau-config-row { display: flex; gap: 0.75rem; align-items: start; padding: 0.8rem 0; border-bottom: 1px solid #eee; flex-wrap: wrap; }
-  .sau-config-row .field { min-width: 100px; }
-  .sau-config-row label { font-size: 0.75rem; }
-  .sau-config-row .sau-controls { display: flex; flex-direction: column; gap: 0.5rem; min-width: 160px; }
-  .sau-preview-wrap { position: relative; width: 220px; height: 170px; flex-shrink: 0; }
-  .sau-preview-wrap canvas { width: 220px; height: 170px; border: 1px solid var(--border); border-radius: 6px; background: #fafbfc; }
+  .tbl-btn { background: transparent; border: 1px solid var(--line); cursor: pointer; font-weight: 500; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit; border-radius: 0; }
+  .tbl-add { color: var(--ink-muted); font-size: 0.85rem; }
+  .tbl-add:hover { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  .tbl-rm { color: var(--ink-muted); font-size: 0.72rem; }
+  .tbl-rm:hover { background: var(--red); border-color: var(--red); color: var(--surface); }
+
+  .tbl-add-right { width: 24px; flex: 1; }
+  .tbl-add-bottom { width: 100%; height: 26px; }
+  .add-row-cell { border: none !important; background: none !important; padding: 3px 0 0 0 !important; }
+
+  .tbl-rm-left { width: 20px; }
+  .rm-top-cell { border: none !important; background: none !important; padding: 0 1px 3px 1px !important; }
+  .tbl-rm-top { width: 100%; height: 20px; font-size: 0.68rem; }
 
   .hidden { display: none !important; }
 
-  /* Drawer */
-  .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  /* ─── Drawer ─── */
+  .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-  .drawer { position: fixed; top: 0; right: -380px; width: 370px; height: 100%; background: white; z-index: 901; box-shadow: -4px 0 24px rgba(0,0,0,0.12); transition: right 0.3s ease; display: flex; flex-direction: column; }
+  .drawer { position: fixed; top: 0; right: -370px; width: 360px; height: 100%; background: var(--card); z-index: 901; box-shadow: -2px 0 24px rgba(0,0,0,0.3); transition: right 0.25s ease; display: flex; flex-direction: column; border-left: 1px solid var(--line); }
   .drawer.open { right: 0; }
-  .drawer-header { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--primary); color: white; flex-shrink: 0; }
-  .drawer-header h2 { font-size: 1rem; font-weight: 600; }
-  .drawer-close { background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 4px; }
-  .drawer-close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
-  .drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
-  .drawer-footer { padding: 0.75rem 1.2rem; border-top: 1px solid var(--border); background: #fafbfc; flex-shrink: 0; }
-  .drawer-footer .version-new { display: flex; gap: 0.5rem; }
-  .drawer-footer .version-new input { flex: 1; font-size: 0.82rem; }
+  .drawer-header { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .drawer-header h2 { font-size: 0.88rem; font-weight: 600; }
+  .drawer-close { background: none; border: none; color: var(--ink-muted); font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.35rem; border-radius: 4px; transition: all 0.15s; }
+  .drawer-close:hover { color: var(--ink); background: var(--line-soft); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 0.85rem 1.1rem; }
+  .drawer-footer { padding: 0.65rem 1.1rem; border-top: 1px solid var(--line); background: var(--surface); flex-shrink: 0; }
+  .drawer-footer .version-new { display: flex; gap: 0.4rem; }
+  .drawer-footer .version-new input { flex: 1; font-size: 0.78rem; }
 
-  /* Version items inside drawer */
-  .version-item { padding: 0.65rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.82rem; transition: all 0.15s; }
-  .version-item:hover { background: #f0f4f8; border-color: #c0c4c8; }
-  .version-item.active { border-color: var(--accent); background: #eef5ff; }
-  .version-item .v-top { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+  .version-item { padding: 0.55rem 0.6rem; border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 0.4rem; font-size: 0.78rem; transition: all 0.15s; }
+  .version-item:hover { border-color: var(--ink-muted); }
+  .version-item.active { border-color: var(--accent); background: rgba(218,119,86,0.08); }
+  .version-item .v-top { display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; }
   .version-item .v-info { flex: 1; min-width: 0; overflow: hidden; }
-  .version-item .v-name { font-weight: 600; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 4px; transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-  .version-item .v-name:hover { background: #dde3e8; }
-  .version-item .v-name-editing { width: 100%; font-size: 0.82rem; padding: 0.15rem 0.3rem; font-weight: 600; border: 1px solid var(--accent); border-radius: 4px; outline: none; box-sizing: border-box; }
-  .version-item .v-meta { font-size: 0.68rem; color: var(--text-light); margin-top: 0.2rem; padding-left: 0.3rem; }
+  .version-item .v-name { font-weight: 600; cursor: pointer; padding: 0.1rem 0.25rem; border-radius: 4px; transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .version-item .v-name:hover { background: var(--line-soft); }
+  .version-item .v-name-editing { width: 100%; font-size: 0.78rem; padding: 0.15rem 0.25rem; font-weight: 600; border: 1px solid var(--accent); border-radius: 4px; outline: none; box-sizing: border-box; }
+  .version-item .v-meta { font-size: 0.65rem; color: var(--ink-muted); margin-top: 0.15rem; padding-left: 0.25rem; }
   .version-item .v-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
-  .v-icon-btn { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; color: var(--text-light); }
-  .v-icon-btn:hover { background: var(--bg); border-color: #aaa; color: var(--text); }
+  .v-icon-btn { width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 6px; background: var(--line-soft); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.72rem; transition: all 0.15s; color: var(--ink-muted); }
+  .v-icon-btn:hover { border-color: var(--ink-muted); color: var(--ink); }
   .v-icon-btn.load { color: white; background: var(--accent); border-color: var(--accent); }
-  .v-icon-btn.load:hover { background: var(--accent-dark); }
-  .v-icon-btn.export { color: var(--success); border-color: var(--success); }
-  .v-icon-btn.export:hover { background: var(--success); color: white; }
-  .v-icon-btn.del:hover { background: var(--danger); color: white; border-color: var(--danger); }
-  .v-empty { text-align: center; padding: 2rem 1rem; color: var(--text-light); font-size: 0.85rem; }
-  .v-empty svg { display: block; margin: 0 auto 0.75rem; opacity: 0.3; }
+  .v-icon-btn.load:hover { background: var(--accent-hover); }
+  .v-icon-btn.export { color: var(--accent); border-color: var(--accent); }
+  .v-icon-btn.export:hover { background: var(--accent); color: white; }
+  .v-icon-btn.del:hover { background: var(--red); color: white; border-color: var(--red); }
+  .v-empty { text-align: center; padding: 2rem 1rem; color: var(--ink-muted); font-size: 0.82rem; }
+  .v-empty svg { display: block; margin: 0 auto 0.65rem; opacity: 0.25; }
 
   @media (max-width: 480px) { .drawer { width: 100%; right: -100%; } }
 
-  /* Modal overlay */
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  /* ─── Modal ─── */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
-  .modal { background: white; border-radius: 12px; padding: 1.5rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-  .modal h3 { margin-bottom: 1rem; }
+  .modal { background: var(--card); border-radius: 12px; padding: 1.5rem; max-width: 440px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.4); border: 1px solid var(--line); }
+  .modal.wide { max-width: 560px; }
+  .modal h3 { margin-bottom: 0.85rem; font-size: 0.9rem; }
+  .import-tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--line); }
+  .import-tab { background: none; border: none; color: var(--ink-muted); padding: 0.5rem 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .import-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .import-tab:hover { color: var(--ink); }
+  .import-pane { display: none; }
+  .import-pane.active { display: block; }
+  .import-paste { width: 100%; min-height: 120px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 0.6rem; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.75rem; resize: vertical; }
+  .import-hint { font-size: 0.7rem; color: var(--ink-muted); margin-bottom: 0.5rem; }
+  .import-drop { border: 2px dashed var(--line); border-radius: 8px; padding: 2rem 1rem; text-align: center; color: var(--ink-muted); font-size: 0.8rem; cursor: pointer; transition: border-color 0.15s; }
+  .import-drop:hover, .import-drop.dragover { border-color: var(--accent); color: var(--ink); }
+  .import-drop input[type="file"] { display: none; }
 
   @media (max-width: 768px) {
-    .stepper { flex-wrap: wrap; gap: 0.25rem; }
+    .stepper { flex-wrap: wrap; gap: 0.2rem; }
     .step-connector { display: none; }
     .inline-fields { flex-direction: column; }
     .method-grid { grid-template-columns: 1fr; }
-    header { flex-direction: column; align-items: flex-start; }
+    header { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
   }
 </style>
 </head>
@@ -192,7 +234,7 @@
 <header>
   <div class="left">
     <h1>Trade-Off Analysis Tool</h1>
-    <p>Quantify value and compare alternatives using multiple decision methods</p>
+    <p>Compare alternatives using multiple decision methods</p>
   </div>
   <div class="right">
     <button class="hbtn" onclick="toggleDrawer()">
@@ -224,55 +266,35 @@
 
   <!-- Stepper -->
   <div class="stepper" id="stepper">
-    <div class="step-item active" data-step="1"><div class="step-num">1</div><span>Define Data</span></div>
+    <div class="step-item active" data-step="1" onclick="goToStep(1)"><div class="step-num">1</div><span>Define Data</span></div>
     <div class="step-connector"></div>
-    <div class="step-item" data-step="2"><div class="step-num">2</div><span>Select Methods</span></div>
+    <div class="step-item" data-step="2" onclick="goToStep(2)"><div class="step-num">2</div><span>Select Methods</span></div>
     <div class="step-connector"></div>
-    <div class="step-item" data-step="3"><div class="step-num">3</div><span>Configure</span></div>
+    <div class="step-item" data-step="3" onclick="goToStep(3)"><div class="step-num">3</div><span>Configure</span></div>
     <div class="step-connector"></div>
-    <div class="step-item" data-step="4"><div class="step-num">4</div><span>Results</span></div>
+    <div class="step-item" data-step="4" onclick="goToStep(4)"><div class="step-num">4</div><span>Results</span></div>
   </div>
 
   <!-- STEP 1 -->
   <div id="step1" class="step-content">
     <div class="card">
-      <h2>Define Your Decision Problem</h2>
-      <p class="subtitle">Set up the alternatives and criteria for your trade-off analysis</p>
+      <h2>Define Data</h2>
+      <p class="subtitle">Set weights (sum to 1.0), goals, and values for each alternative.</p>
 
-      <div class="inline-fields" style="margin-bottom:1rem;">
-        <div class="field">
-          <label>Layout</label>
-          <select id="layoutSelect" onchange="updateLayout()">
-            <option value="alt-rows">Alternatives as Rows, Criteria as Columns</option>
-            <option value="alt-cols">Alternatives as Columns, Criteria as Rows</option>
-          </select>
+      <div class="table-wrap" style="margin-top:0.5rem;">
+        <div class="tbl-side-col left" id="rmAltCol"></div>
+        <div class="table-core">
+          <table id="dataTable"></table>
         </div>
-      </div>
-      <div class="inline-fields" style="margin-bottom:1rem;">
-        <div class="field">
-          <label>Number of Alternatives</label>
-          <input type="number" id="numAlts" value="4" min="2" max="20" onchange="rebuildTable()">
-        </div>
-        <div class="field">
-          <label>Number of Criteria</label>
-          <input type="number" id="numCrit" value="4" min="1" max="20" onchange="rebuildTable()">
-        </div>
+        <div class="tbl-side-col right" id="addColBtn"></div>
       </div>
 
-      <div class="info-box">
-        For each criterion, set the <strong>weight</strong> (importance — must sum to 1.0) and whether the goal is to <strong>minimize</strong> or <strong>maximize</strong>.
-      </div>
-
-      <!-- Live validation bar -->
-      <div id="validationBar" class="validation-bar ok">All inputs valid. Weights sum to 1.00.</div>
-
-      <div style="overflow-x:auto; margin-top:0.5rem;">
-        <table id="dataTable"></table>
-      </div>
+      <div id="validationBar" class="validation-bar hidden"></div>
 
       <div class="btn-group">
-        <button class="btn btn-secondary" onclick="autoNormalizeWeights()">Auto-Normalize Weights</button>
-        <button class="btn btn-primary" onclick="goToStep(2)">Next: Select Methods &rarr;</button>
+        <button class="btn btn-secondary" onclick="openImportModal()">Import</button>
+        <button class="btn btn-secondary" onclick="autoNormalizeWeights()">Normalize Weights</button>
+        <button class="btn btn-primary" onclick="goToStep(2)">Next &rarr;</button>
       </div>
     </div>
   </div>
@@ -280,15 +302,15 @@
   <!-- STEP 2 -->
   <div id="step2" class="step-content hidden">
     <div class="card">
-      <h2>Select Analysis Methods</h2>
-      <p class="subtitle">Choose one or more methods to compare rankings side by side</p>
+      <h2>Select Methods</h2>
+      <p class="subtitle">Choose one or more methods to compare.</p>
 
       <div class="method-grid">
         <div class="method-card" data-method="lexicographic" onclick="toggleMethod(this)">
           <div class="check">&#10003;</div>
           <span class="tag tag-simple">Simple</span>
           <h3>Lexicographic</h3>
-          <p>Rank alternatives by the single most important attribute.</p>
+          <p>Rank by the most important criterion only.</p>
           <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnLex')">Learn more</span>
           <div class="learn-content" id="learnLex">
             <h4>How it works</h4>
@@ -306,7 +328,7 @@
           <div class="check">&#10003;</div>
           <span class="tag tag-simple">Simple</span>
           <h3>Pugh Method</h3>
-          <p>Compare against a baseline using +, S, &minus; scoring.</p>
+          <p>Compare each option against a baseline (+/S/&minus;).</p>
           <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnPugh')">Learn more</span>
           <div class="learn-content" id="learnPugh">
             <h4>How it works</h4>
@@ -324,7 +346,7 @@
           <div class="check">&#10003;</div>
           <span class="tag tag-moderate">Moderate</span>
           <h3>QFD-like</h3>
-          <p>Score with 0, 1, 3, 9 goodness scale. Weighted &amp; unweighted sums.</p>
+          <p>Rate 0/1/3/9 per criterion, compute weighted sums.</p>
           <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnQFD')">Learn more</span>
           <div class="learn-content" id="learnQFD">
             <h4>How it works</h4>
@@ -343,7 +365,7 @@
           <div class="check">&#10003;</div>
           <span class="tag tag-moderate">Moderate</span>
           <h3>Modified Decision Matrix</h3>
-          <p>Normalize scores to [0,1] and compute weighted sums.</p>
+          <p>Normalize to [0,1] then compute weighted sums.</p>
           <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnMDM')">Learn more</span>
           <div class="learn-content" id="learnMDM">
             <h4>How it works</h4>
@@ -363,7 +385,7 @@
           <div class="check">&#10003;</div>
           <span class="tag tag-advanced">Advanced</span>
           <h3>Multi-Attribute Utility (MAU)</h3>
-          <p>Define utility curves per attribute, interpolate values, weighted sum.</p>
+          <p>Custom utility curves per criterion, weighted sum.</p>
           <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnMAU')">Learn more</span>
           <div class="learn-content" id="learnMAU">
             <h4>How it works</h4>
@@ -381,7 +403,7 @@
 
       <div class="btn-group">
         <button class="btn btn-secondary" onclick="goToStep(1)">&larr; Back</button>
-        <button class="btn btn-primary" onclick="goToStep(3)">Next: Configure &rarr;</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">Next &rarr;</button>
       </div>
     </div>
   </div>
@@ -389,12 +411,12 @@
   <!-- STEP 3 -->
   <div id="step3" class="step-content hidden">
     <div class="card">
-      <h2>Configure Methods</h2>
-      <p class="subtitle">Provide additional inputs required by your selected methods</p>
+      <h2>Configure</h2>
+      <p class="subtitle">Set parameters for each selected method.</p>
       <div id="configPanels"></div>
       <div class="btn-group">
         <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back</button>
-        <button class="btn btn-success" onclick="runAnalysis()">Run Analysis &rarr;</button>
+        <button class="btn btn-success" onclick="runAnalysis()">Run &rarr;</button>
       </div>
     </div>
   </div>
@@ -403,9 +425,9 @@
   <div id="step4" class="step-content hidden">
     <div id="resultsContainer"></div>
     <div class="btn-group">
-      <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back to Methods</button>
-      <button class="btn btn-primary" onclick="exportAllToExcel()">Export to Excel</button>
-      <button class="btn btn-success" onclick="showSaveModal()">Save This Analysis</button>
+      <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back</button>
+      <button class="btn btn-primary" onclick="exportAllToExcel()">Export</button>
+      <button class="btn btn-success" onclick="showSaveModal()">Save</button>
     </div>
   </div>
 </div>
@@ -419,6 +441,42 @@
     <div class="btn-group" style="margin-top:0.5rem;">
       <button class="btn btn-secondary" onclick="document.getElementById('saveModal').classList.remove('show')">Cancel</button>
       <button class="btn btn-primary" onclick="saveVersionFromModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal wide">
+    <h3>Import Data</h3>
+    <div class="import-tabs">
+      <button class="import-tab active" onclick="switchImportTab('paste')">Paste</button>
+      <button class="import-tab" onclick="switchImportTab('file')">File (CSV / Excel)</button>
+    </div>
+    <div class="import-pane active" id="importPanePaste">
+      <p class="import-hint">Paste tab- or comma-separated data. First row = criterion names, first column = alternative names. Optionally include a Weights row and a Goal row (max/min).</p>
+      <textarea class="import-paste" id="importPasteArea" placeholder="	Criterion 1	Criterion 2	Criterion 3
+Alt A	5	8	3
+Alt B	7	4	9
+Weights	0.4	0.3	0.3
+Goal	max	min	max"></textarea>
+    </div>
+    <div class="import-pane" id="importPaneFile">
+      <div class="import-drop" id="importDropZone" onclick="document.getElementById('importFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleImportFile(event.dataTransfer.files[0])">
+        Drop a .csv or .xlsx file here or click to browse
+        <input type="file" id="importFileInput" accept=".csv,.tsv,.txt,.xlsx,.xls" onchange="handleImportFile(this.files[0])">
+      </div>
+      <p class="import-hint" style="margin-top:0.5rem;">Same format: first row = criteria, first column = alternatives. Optional Weights and Goal rows.</p>
+    </div>
+    <div id="importPreview" style="display:none;margin-top:0.75rem;">
+      <p style="font-size:0.75rem;color:var(--ink-soft);margin-bottom:0.35rem;" id="importPreviewLabel"></p>
+      <div style="overflow-x:auto;max-height:140px;overflow-y:auto;border:1px solid var(--line);border-radius:4px;">
+        <table id="importPreviewTable" style="font-size:0.72rem;"></table>
+      </div>
+    </div>
+    <div class="btn-group" style="margin-top:1rem;">
+      <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+      <button class="btn btn-primary" id="importApplyBtn" onclick="applyImport()" disabled>Apply</button>
     </div>
   </div>
 </div>
@@ -546,9 +604,7 @@ function loadVersion(id) {
   state.mdmMax = [...(s.mdmMax || [])];
   state.mauCurves = (s.mauCurves || []).map(c => ({...c}));
 
-  document.getElementById('numAlts').value = state.numAlts;
-  document.getElementById('numCrit').value = state.numCrit;
-  document.getElementById('layoutSelect').value = state.layout;
+  state.layout = 'alt-rows';
   activeVersionId = id;
 
   renderDataTable();
@@ -618,6 +674,186 @@ function commitRename(id) {
   renderVersionList();
 }
 
+// ========== IMPORT ==========
+let importParsedData = null;
+
+function openImportModal() {
+  importParsedData = null;
+  document.getElementById('importPasteArea').value = '';
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('importApplyBtn').disabled = true;
+  switchImportTab('paste');
+  document.getElementById('importModal').classList.add('show');
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('show');
+}
+
+function switchImportTab(tab) {
+  document.querySelectorAll('.import-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.import-pane').forEach(el => el.classList.remove('active'));
+  if (tab === 'paste') {
+    document.querySelectorAll('.import-tab')[0].classList.add('active');
+    document.getElementById('importPanePaste').classList.add('active');
+  } else {
+    document.querySelectorAll('.import-tab')[1].classList.add('active');
+    document.getElementById('importPaneFile').classList.add('active');
+  }
+}
+
+// Parse pasted text on input
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('importPasteArea');
+  if (ta) ta.addEventListener('input', () => {
+    const text = ta.value.trim();
+    if (!text) { importParsedData = null; document.getElementById('importPreview').style.display = 'none'; document.getElementById('importApplyBtn').disabled = true; return; }
+    parseImportText(text);
+  });
+});
+
+function handleImportFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_csv(ws, { FS: '\t' });
+        parseImportText(rows.trim());
+      } catch (err) {
+        importParsedData = null;
+        showImportPreview(null);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = (e) => parseImportText(e.target.result.trim());
+    reader.readAsText(file);
+  }
+}
+
+function parseImportText(text) {
+  // Detect delimiter: tab or comma
+  const firstLine = text.split('\n')[0];
+  const delim = firstLine.includes('\t') ? '\t' : ',';
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) { importParsedData = null; showImportPreview(null); return; }
+
+  const rows = lines.map(l => {
+    // Handle quoted CSV fields
+    if (delim === ',') {
+      const fields = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < l.length; i++) {
+        const ch = l[i];
+        if (ch === '"') { inQ = !inQ; continue; }
+        if (ch === ',' && !inQ) { fields.push(cur.trim()); cur = ''; continue; }
+        cur += ch;
+      }
+      fields.push(cur.trim());
+      return fields;
+    }
+    return l.split(delim).map(s => s.trim());
+  });
+
+  // First row: header — first cell may be empty or a label
+  const headerRow = rows[0];
+  const critNames = headerRow.slice(1);
+  const numCrit = critNames.length;
+  if (numCrit < 1) { importParsedData = null; showImportPreview(null); return; }
+
+  // Separate data rows from special rows (Weights, Goal)
+  const altNames = [], values = [];
+  let weights = null, goals = null;
+
+  for (let r = 1; r < rows.length; r++) {
+    const label = (rows[r][0] || '').toLowerCase().trim();
+    const cells = rows[r].slice(1);
+    if (label === 'weights' || label === 'weight') {
+      weights = cells.map(v => parseFloat(v) || 0);
+    } else if (label === 'goal' || label === 'goals' || label === 'direction') {
+      goals = cells.map(v => {
+        const lv = (v || '').toLowerCase().trim();
+        return (lv === 'min' || lv === 'minimize') ? 'min' : 'max';
+      });
+    } else {
+      altNames.push(rows[r][0] || 'Alt ' + (altNames.length + 1));
+      const rowVals = cells.map(v => parseFloat(v) || 0);
+      // Pad or trim to numCrit
+      while (rowVals.length < numCrit) rowVals.push(0);
+      values.push(rowVals.slice(0, numCrit));
+    }
+  }
+
+  if (altNames.length < 2) { importParsedData = null; showImportPreview(null); return; }
+
+  // Default weights: equal
+  if (!weights) {
+    weights = critNames.map(() => +(1 / numCrit).toFixed(4));
+  }
+  while (weights.length < numCrit) weights.push(0);
+  weights = weights.slice(0, numCrit);
+
+  // Default goals: all max
+  if (!goals) {
+    goals = critNames.map(() => 'max');
+  }
+  while (goals.length < numCrit) goals.push('max');
+  goals = goals.slice(0, numCrit);
+
+  importParsedData = { critNames, altNames, values, weights, goals, numCrit, numAlts: altNames.length };
+  showImportPreview(importParsedData);
+}
+
+function showImportPreview(data) {
+  const previewDiv = document.getElementById('importPreview');
+  const btn = document.getElementById('importApplyBtn');
+  if (!data) {
+    previewDiv.style.display = 'none';
+    btn.disabled = true;
+    return;
+  }
+  previewDiv.style.display = 'block';
+  btn.disabled = false;
+  document.getElementById('importPreviewLabel').textContent = data.numAlts + ' alternatives, ' + data.numCrit + ' criteria detected';
+
+  let html = '<tr><td></td>';
+  for (const cn of data.critNames) html += `<td style="font-weight:600;padding:3px 6px;">${esc(cn)}</td>`;
+  html += '</tr>';
+  html += '<tr><td style="color:var(--ink-muted);padding:3px 6px;">Weight</td>';
+  for (const w of data.weights) html += `<td style="padding:3px 6px;">${w}</td>`;
+  html += '</tr>';
+  html += '<tr><td style="color:var(--ink-muted);padding:3px 6px;">Goal</td>';
+  for (const g of data.goals) html += `<td style="padding:3px 6px;">${g}</td>`;
+  html += '</tr>';
+  for (let a = 0; a < data.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;padding:3px 6px;">${esc(data.altNames[a])}</td>`;
+    for (let c = 0; c < data.numCrit; c++) html += `<td style="padding:3px 6px;">${data.values[a][c]}</td>`;
+    html += '</tr>';
+  }
+  document.getElementById('importPreviewTable').innerHTML = html;
+}
+
+function applyImport() {
+  if (!importParsedData) return;
+  const d = importParsedData;
+  state.numAlts = d.numAlts;
+  state.numCrit = d.numCrit;
+  state.altNames = [...d.altNames];
+  state.critNames = [...d.critNames];
+  state.weights = [...d.weights];
+  state.optDir = [...d.goals];
+  state.values = d.values.map(r => [...r]);
+  closeImportModal();
+  renderDataTable();
+  validateInputs();
+}
+
 function renderVersionList() {
   const list = document.getElementById('versionList');
   if (savedVersions.length === 0) {
@@ -672,8 +908,10 @@ function renderVersionList() {
 }
 
 // ========== VALIDATION ==========
+let validationShown = false;
 function validateInputs() {
   const bar = document.getElementById('validationBar');
+  if (!validationShown) { bar.className = 'validation-bar hidden'; bar.innerHTML = ''; }
   const errors = [];
   const warnings = [];
 
@@ -681,7 +919,7 @@ function validateInputs() {
   const wSum = state.weights.reduce((a, b) => a + b, 0);
   const wSumRounded = Math.round(wSum * 1000) / 1000;
   if (Math.abs(wSumRounded - 1.0) > 0.01) {
-    errors.push(`Weights sum to ${wSumRounded.toFixed(3)} — must equal 1.0`);
+    errors.push(`Weights sum to ${parseFloat(wSumRounded.toFixed(3))}, not 1.0. Use Normalize Weights to fix.`);
   }
 
   // Negative weights
@@ -709,21 +947,27 @@ function validateInputs() {
   for (let c = 0; c < state.numCrit; c++) {
     const vals = state.values.map(r => r[c]);
     if (vals.every(v => v === vals[0])) {
-      warnings.push(`All alternatives have the same value for "${state.critNames[c]}" — this criterion won't differentiate.`);
+      warnings.push(`"${state.critNames[c]}" has no variance`);
     }
   }
 
   if (errors.length > 0) {
-    bar.className = 'validation-bar error';
-    bar.innerHTML = '&#9888; ' + errors.join(' | ');
+    if (validationShown) {
+      bar.className = 'validation-bar error';
+      bar.style.marginTop = '0.5rem';
+      bar.innerHTML = errors.join(' · ');
+    }
     return false;
   } else if (warnings.length > 0) {
-    bar.className = 'validation-bar warning';
-    bar.innerHTML = '&#9888; ' + warnings.join(' | ') + ` <span class="weight-indicator" style="background:#d4edda;color:#155724;">Weights: ${wSumRounded.toFixed(3)}</span>`;
+    if (validationShown) {
+      bar.className = 'validation-bar warning';
+      bar.style.marginTop = '0.5rem';
+      bar.innerHTML = warnings.join(' · ');
+    }
     return true;
   } else {
-    bar.className = 'validation-bar ok';
-    bar.innerHTML = `&#10003; All inputs valid. <span class="weight-indicator" style="background:#d4edda;color:#155724;">Weights: ${wSumRounded.toFixed(3)}</span>`;
+    bar.className = 'validation-bar hidden';
+    bar.innerHTML = '';
     return true;
   }
 }
@@ -744,13 +988,51 @@ function autoNormalizeWeights() {
 function init() { rebuildTable(); renderVersionList(); }
 
 function updateLayout() {
-  state.layout = document.getElementById('layoutSelect').value;
+  state.layout = 'alt-rows';
   rebuildTable();
 }
 
+function addAlternative() {
+  if (state.numAlts >= 20) return;
+  state.numAlts++;
+  state.altNames.push('Alt ' + state.numAlts);
+  state.values.push(new Array(state.numCrit).fill(0));
+  renderDataTable();
+  validateInputs();
+}
+
+function removeAlternative() {
+  if (state.numAlts <= 2) return;
+  state.numAlts--;
+  state.altNames.length = state.numAlts;
+  state.values.length = state.numAlts;
+  renderDataTable();
+  validateInputs();
+}
+
+function addCriterion() {
+  if (state.numCrit >= 20) return;
+  state.numCrit++;
+  state.critNames.push('Criterion ' + state.numCrit);
+  state.weights.push(+(1 / state.numCrit).toFixed(2));
+  state.optDir.push('max');
+  state.values.forEach(row => row.push(0));
+  renderDataTable();
+  validateInputs();
+}
+
+function removeCriterion() {
+  if (state.numCrit <= 1) return;
+  state.numCrit--;
+  state.critNames.length = state.numCrit;
+  state.weights.length = state.numCrit;
+  state.optDir.length = state.numCrit;
+  state.values.forEach(row => row.length = state.numCrit);
+  renderDataTable();
+  validateInputs();
+}
+
 function rebuildTable() {
-  state.numAlts = parseInt(document.getElementById('numAlts').value) || 4;
-  state.numCrit = parseInt(document.getElementById('numCrit').value) || 4;
   while (state.altNames.length < state.numAlts) state.altNames.push('Alt ' + (state.altNames.length + 1));
   while (state.critNames.length < state.numCrit) state.critNames.push('Criterion ' + (state.critNames.length + 1));
   while (state.weights.length < state.numCrit) state.weights.push(+(1 / state.numCrit).toFixed(2));
@@ -767,56 +1049,103 @@ function rebuildTable() {
   validateInputs();
 }
 
+function removeSpecificAlt(a) {
+  if (state.numAlts <= 2) return;
+  state.altNames.splice(a, 1);
+  state.values.splice(a, 1);
+  state.numAlts--;
+  renderDataTable();
+  validateInputs();
+}
+
+function removeSpecificCrit(c) {
+  if (state.numCrit <= 1) return;
+  state.critNames.splice(c, 1);
+  state.weights.splice(c, 1);
+  state.optDir.splice(c, 1);
+  state.values.forEach(row => row.splice(c, 1));
+  state.numCrit--;
+  renderDataTable();
+  validateInputs();
+}
+
 function renderDataTable() {
   const table = document.getElementById('dataTable');
   const nA = state.numAlts, nC = state.numCrit;
+  let html = '';
 
-  if (state.layout === 'alt-rows') {
-    let html = '<tr><th></th>';
-    for (let c = 0; c < nC; c++) {
-      html += `<th><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="color:white;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:4px;text-align:center;"></th>`;
-    }
-    html += '</tr>';
-    html += '<tr style="background:#e8f4fd;"><td style="font-weight:600;font-size:0.78rem;">Weight</td>';
-    for (let c = 0; c < nC; c++) {
-      html += `<td><input type="number" step="0.01" min="0" max="1" value="${state.weights[c]}" oninput="state.weights[${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
-    }
-    html += '</tr>';
-    html += '<tr style="background:#fef9e7;"><td style="font-weight:600;font-size:0.78rem;">Goal</td>';
-    for (let c = 0; c < nC; c++) {
-      html += `<td><select onchange="state.optDir[${c}]=this.value" style="font-size:0.78rem;">
-        <option value="max" ${state.optDir[c]==='max'?'selected':''}>Maximize</option>
-        <option value="min" ${state.optDir[c]==='min'?'selected':''}>Minimize</option>
-      </select></td>`;
-    }
-    html += '</tr>';
-    for (let a = 0; a < nA; a++) {
-      html += `<tr><td><input value="${esc(state.altNames[a])}" oninput="state.altNames[${a}]=this.value;validateInputs()" style="font-weight:600;text-align:left;"></td>`;
-      for (let c = 0; c < nC; c++) {
-        html += `<td><input type="number" step="any" value="${state.values[a][c]}" oninput="state.values[${a}][${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
-      }
-      html += '</tr>';
-    }
-    table.innerHTML = html;
-  } else {
-    let html = '<tr><th></th>';
-    for (let a = 0; a < nA; a++) {
-      html += `<th><input value="${esc(state.altNames[a])}" oninput="state.altNames[${a}]=this.value;validateInputs()" style="color:white;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:4px;text-align:center;"></th>`;
-    }
-    html += '<th style="font-size:0.72rem;">Weight</th><th style="font-size:0.72rem;">Goal</th></tr>';
-    for (let c = 0; c < nC; c++) {
-      html += `<tr><td><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="font-weight:600;text-align:left;"></td>`;
-      for (let a = 0; a < nA; a++) {
-        html += `<td><input type="number" step="any" value="${state.values[a][c]}" oninput="state.values[${a}][${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
-      }
-      html += `<td><input type="number" step="0.01" min="0" max="1" value="${state.weights[c]}" oninput="state.weights[${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
-      html += `<td><select onchange="state.optDir[${c}]=this.value" style="font-size:0.78rem;">
-        <option value="max" ${state.optDir[c]==='max'?'selected':''}>Max</option>
-        <option value="min" ${state.optDir[c]==='min'?'selected':''}>Min</option>
-      </select></td></tr>`;
-    }
-    table.innerHTML = html;
+  // Top × row: one remove button per criterion (same style as bottom + row)
+  html += '<tr><td class="rm-top-cell"></td>';
+  for (let c = 0; c < nC; c++) {
+    html += `<td class="rm-top-cell">`;
+    if (nC > 1) html += `<button class="tbl-btn tbl-rm tbl-rm-top" onclick="removeSpecificCrit(${c})" title="Remove criterion">&times;</button>`;
+    html += `</td>`;
   }
+  html += '</tr>';
+
+  // Header row: criterion names
+  html += '<tr><th style="min-width:110px;"></th>';
+  for (let c = 0; c < nC; c++) {
+    html += `<th><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="color:var(--ink);font-weight:600;background:transparent;border:1px solid rgba(236,229,221,0.2);border-radius:4px;text-align:center;"></th>`;
+  }
+  html += '</tr>';
+
+  // Weight row
+  html += '<tr style="background:var(--line-soft);"><td style="font-weight:600;font-size:0.75rem;color:var(--ink-soft);">Weight</td>';
+  for (let c = 0; c < nC; c++) {
+    html += `<td><input type="number" step="0.01" min="0" max="1" value="${state.weights[c]}" oninput="state.weights[${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+  }
+  html += '</tr>';
+
+  // Goal row
+  html += '<tr style="background:var(--surface);"><td style="font-weight:600;font-size:0.75rem;color:var(--ink-soft);">Goal</td>';
+  for (let c = 0; c < nC; c++) {
+    html += `<td><select onchange="state.optDir[${c}]=this.value" style="font-size:0.78rem;">
+      <option value="max" ${state.optDir[c]==='max'?'selected':''}>Maximize</option>
+      <option value="min" ${state.optDir[c]==='min'?'selected':''}>Minimize</option>
+    </select></td>`;
+  }
+  html += '</tr>';
+
+  // Alternative data rows (no × inside — those are in the left column)
+  for (let a = 0; a < nA; a++) {
+    html += `<tr><td><input value="${esc(state.altNames[a])}" oninput="state.altNames[${a}]=this.value;validateInputs()" style="font-weight:600;text-align:left;"></td>`;
+    for (let c = 0; c < nC; c++) {
+      html += `<td><input type="number" step="any" value="${state.values[a][c]}" oninput="state.values[${a}][${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+    }
+    html += '</tr>';
+  }
+
+  // Bottom + row: add alternative
+  html += `<tr><td class="add-row-cell" colspan="${nC + 1}"><button class="tbl-btn tbl-add tbl-add-bottom" onclick="addAlternative()">+</button></td></tr>`;
+
+  table.innerHTML = html;
+
+  // Left column: × buttons for removing alternatives (only when >2 alts)
+  const rmCol = document.getElementById('rmAltCol');
+  let rmHtml = '';
+  if (nA > 2) {
+    rmHtml = '<div style="flex:0 0 auto;" id="rmAltSpacer"></div>';
+    for (let a = 0; a < nA; a++) {
+      rmHtml += `<button class="tbl-btn tbl-rm tbl-rm-left" style="flex:1;" onclick="removeSpecificAlt(${a})" title="Remove alternative">&times;</button>`;
+    }
+    rmHtml += '<div style="flex:0 0 32px;"></div>';
+  }
+  rmCol.innerHTML = rmHtml;
+
+  // Right column: + button for adding criteria (full height)
+  const addCol = document.getElementById('addColBtn');
+  addCol.innerHTML = `<button class="tbl-btn tbl-add tbl-add-right" style="flex:1;" onclick="addCriterion()" title="Add criterion">+</button>`;
+
+  // Align left spacer to match header area height
+  requestAnimationFrame(() => {
+    const rows = table.querySelectorAll('tr');
+    // first 4 rows: rm-top, header, weight, goal
+    let h = 0;
+    for (let i = 0; i < Math.min(4, rows.length); i++) h += rows[i].offsetHeight;
+    const spacer = document.getElementById('rmAltSpacer');
+    if (spacer) spacer.style.height = h + 'px';
+  });
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
@@ -825,22 +1154,30 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 function syncAllInputs() { /* state is synced live via oninput handlers */ }
 
 function goToStep(n) {
-  if (n === 2) {
+  // Validation when moving forward
+  if (n >= 2) {
     syncAllInputs();
+    validationShown = true;
+    if (!validateInputs()) {
+      return;
+    }
     const wSum = state.weights.reduce((a, b) => a + b, 0);
     if (Math.abs(wSum - 1.0) > 0.02) {
-      if (!confirm(`Weights sum to ${wSum.toFixed(3)}, not 1.0. Would you like to auto-normalize them?\n\nClick OK to normalize, or Cancel to go back and fix manually.`)) return;
       autoNormalizeWeights();
+      renderDataTable();
+      validateInputs();
     }
-    if (!validateInputs()) { /* warnings are okay to proceed */ }
   }
-  if (n === 3) {
+  if (n >= 3) {
     syncAllInputs();
     if (state.selectedMethods.size === 0) { alert('Please select at least one method.'); return; }
     buildConfigPanels();
   }
-  if (n === 4) return;
+  if (n === 4) {
+    if (!state.lastResults) { runAnalysis(); return; }
+  }
 
+  if (n === 1) { validationShown = false; const vb = document.getElementById('validationBar'); vb.className = 'validation-bar hidden'; vb.innerHTML = ''; }
   document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
   document.getElementById('step' + n).classList.remove('hidden');
   document.querySelectorAll('.step-item').forEach(el => {
@@ -873,7 +1210,7 @@ function buildConfigPanels() {
   if (state.selectedMethods.has('pugh')) {
     html += `<div class="config-panel">
       <h3>Pugh Method</h3>
-      <div class="info-box">Select the baseline alternative. All others will be compared against it.</div>
+      <div class="info-box">Select the baseline. Others are compared against it.</div>
       <div class="field" style="max-width:300px;">
         <label>Baseline Alternative</label>
         <select id="pughBaseline" onchange="state.pughBaseline=parseInt(this.value)">
@@ -887,7 +1224,7 @@ function buildConfigPanels() {
     state.qfdScores = state.values.map(row => row.map(() => 3));
     html += `<div class="config-panel">
       <h3>QFD-like Method</h3>
-      <div class="info-box">Rate each alternative on each criterion: <strong>0</strong> (none), <strong>1</strong> (weak), <strong>3</strong> (moderate), <strong>9</strong> (strong).</div>
+      <div class="info-box">Rate each cell: <strong>0</strong> (none), <strong>1</strong> (weak), <strong>3</strong> (moderate), <strong>9</strong> (strong).</div>
       <div style="overflow-x:auto;"><table id="qfdTable"></table></div>
     </div>`;
   }
@@ -907,10 +1244,13 @@ function buildConfigPanels() {
   }
 
   if (state.selectedMethods.has('mau')) {
-    state.mauCurves = state.critNames.map(() => ({ type: 'linear', degree: 2, expRate: 2, steepness: 5 }));
+    state.mauCurves = state.critNames.map((_, c) => {
+      const vals = state.values.map(r => r[c]);
+      return { type: 'linear', degree: 2, expRate: 5, steepness: 5, lowerBound: Math.min(...vals), upperBound: Math.max(...vals) };
+    });
     html += `<div class="config-panel">
       <h3>Multi-Attribute Utility (MAU)</h3>
-      <div class="info-box">Select the SAU curve shape for each criterion. The tool auto-generates the curve and interpolates utility values.</div>
+      <div class="info-box">Choose a utility curve shape per criterion.</div>
       <div id="mauConfig"></div>
     </div>`;
   }
@@ -955,7 +1295,7 @@ function buildMDMTable() {
       <td><input type="number" step="any" value="${state.mdmMin[c]}" onchange="state.mdmMin[${c}]=parseFloat(this.value)||0"></td>
       <td><input type="number" step="any" value="${state.mdmMax[c]}" onchange="state.mdmMax[${c}]=parseFloat(this.value)||0"></td>
       <td>${state.optDir[c]==='max'?'Maximize':'Minimize'}</td>
-      <td style="font-size:0.75rem;color:var(--text-light);">${dataMin} – ${dataMax}</td>
+      <td style="font-size:0.75rem;color:var(--ink-muted);">${dataMin} – ${dataMax}</td>
     </tr>`;
   }
   table.innerHTML = html;
@@ -967,90 +1307,121 @@ function buildMAUConfig() {
   for (let c = 0; c < state.numCrit; c++) {
     const vals = state.values.map(r => r[c]);
     const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const lb = state.mauCurves[c].lowerBound, ub = state.mauCurves[c].upperBound;
     html += `<div class="sau-config-row">
       <div class="sau-controls">
-        <div class="field" style="min-width:140px;">
+        <div class="field">
           <label><strong>${esc(state.critNames[c])}</strong></label>
-          <span style="font-size:0.72rem;color:var(--text-light);">Range: ${minV}–${maxV} (${state.optDir[c]})</span>
+          <span style="font-size:0.68rem;color:var(--ink-muted);">Data: ${minV}–${maxV} (${state.optDir[c]})</span>
         </div>
-        <div class="field" style="min-width:140px;">
-          <label>Curve Type</label>
+        <div class="field" style="min-width:130px;">
+          <label>Curve</label>
           <select id="mauType${c}" onchange="updateMAUCurve(${c})">
             <option value="linear">Linear</option>
             <option value="polynomial">Polynomial</option>
             <option value="exponential">Exponential</option>
-            <option value="scurve">S-Curve (Sigmoid)</option>
+            <option value="scurve">S-Curve</option>
           </select>
         </div>
-        <div class="field" id="mauParamField${c}" style="min-width:100px;">
-          <label>Parameters</label>
-          <span style="font-size:0.78rem;color:var(--text-light);">None needed</span>
+        <div class="field" id="mauParamField${c}"></div>
+        <div class="field" style="min-width:80px;">
+          <label>Lower Bound</label>
+          <input type="number" step="any" value="${lb}" id="mauLB${c}" oninput="state.mauCurves[${c}].lowerBound=parseFloat(this.value);drawSAUPreview(${c})" style="width:80px;">
+        </div>
+        <div class="field" style="min-width:80px;">
+          <label>Upper Bound</label>
+          <input type="number" step="any" value="${ub}" id="mauUB${c}" oninput="state.mauCurves[${c}].upperBound=parseFloat(this.value);drawSAUPreview(${c})" style="width:80px;">
         </div>
       </div>
       <div class="sau-preview-wrap">
-        <canvas id="sauPreview${c}" width="440" height="340"></canvas>
+        <canvas id="sauPreview${c}"></canvas>
       </div>
     </div>`;
   }
   container.innerHTML = html;
-  for (let c = 0; c < state.numCrit; c++) drawSAUPreview(c);
+  requestAnimationFrame(() => {
+    for (let c = 0; c < state.numCrit; c++) drawSAUPreview(c);
+  });
 }
 
 function drawSAUPreview(c) {
   const canvas = document.getElementById('sauPreview' + c);
   if (!canvas) return;
+  const wrap = canvas.parentElement;
+  const rect = wrap.getBoundingClientRect();
+  if (rect.width < 10 || rect.height < 10) return; // not visible yet
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Colors — warm dark mode
+  const COL_CURVE = '#da7756';
+  const COL_AXIS = '#7d746a';
+  const COL_GRID = '#3a342c';
+  const COL_ACCEPT = 'rgba(218,119,86,0.06)';
+  const COL_ACCEPT_BORDER = 'rgba(218,119,86,0.15)';
+  const COL_ZONE = 'rgba(125,116,106,0.06)';
+  const COL_LABEL = '#7d746a';
 
   const vals = state.values.map(r => r[c]);
-  const dataMin = Math.min(...vals), dataMax = Math.max(...vals);
-  const range = dataMax - dataMin || 1;
+  const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+  let dataMin = (state.mauCurves[c].lowerBound != null && !isNaN(state.mauCurves[c].lowerBound)) ? state.mauCurves[c].lowerBound : rawMin;
+  let dataMax = (state.mauCurves[c].upperBound != null && !isNaN(state.mauCurves[c].upperBound)) ? state.mauCurves[c].upperBound : rawMax;
+  // Handle edge case: all values are the same
+  if (dataMax === dataMin) { dataMin = dataMin - 1; dataMax = dataMax + 1; }
+  if (dataMin > dataMax) { const tmp = dataMin; dataMin = dataMax; dataMax = tmp; }
+  const range = dataMax - dataMin;
   const isMax = state.optDir[c] === 'max';
   const curve = state.mauCurves[c];
 
-  // Layout
-  const pad = { left: 48, right: 30, top: 28, bottom: 42 };
+  // Responsive padding
+  const pad = { left: Math.max(36, W * 0.1), right: Math.max(16, W * 0.04), top: Math.max(20, H * 0.1), bottom: Math.max(32, H * 0.16) };
   const gW = W - pad.left - pad.right;
   const gH = H - pad.top - pad.bottom;
+  if (gW < 20 || gH < 20) return;
 
   // Extended range for excluded/excess zones
-  const extLow = dataMin - range * 0.3;
-  const extHigh = dataMax + range * 0.3;
+  const extPad = range * 0.25;
+  const extLow = dataMin - extPad;
+  const extHigh = dataMax + extPad;
   const extRange = extHigh - extLow;
   const toX = v => pad.left + ((v - extLow) / extRange) * gW;
   const toY = u => pad.top + gH - u * gH;
 
-  // --- Excluded zone (left) ---
-  ctx.fillStyle = 'rgba(180,200,220,0.18)';
+  // --- Background zones ---
+  ctx.fillStyle = COL_ZONE;
   ctx.fillRect(pad.left, pad.top, toX(dataMin) - pad.left, gH);
-  // --- Excess zone (right) ---
   ctx.fillRect(toX(dataMax), pad.top, pad.left + gW - toX(dataMax), gH);
-  // --- Acceptance range (yellow) ---
-  ctx.fillStyle = 'rgba(243,196,49,0.28)';
-  ctx.fillRect(toX(dataMin), pad.top, toX(dataMax) - toX(dataMin), gH);
-  // Yellow border
-  ctx.strokeStyle = 'rgba(210,170,30,0.5)';
+
+  ctx.fillStyle = COL_ACCEPT;
+  const accX = toX(dataMin), accW = toX(dataMax) - toX(dataMin);
+  ctx.fillRect(accX, pad.top, accW, gH);
+  ctx.strokeStyle = COL_ACCEPT_BORDER;
   ctx.lineWidth = 1;
-  ctx.setLineDash([4, 3]);
-  ctx.strokeRect(toX(dataMin), pad.top, toX(dataMax) - toX(dataMin), gH);
+  ctx.setLineDash([5, 3]);
+  ctx.strokeRect(accX, pad.top, accW, gH);
   ctx.setLineDash([]);
 
-  // --- Axes ---
-  ctx.strokeStyle = '#2c3e50';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top);
-  ctx.lineTo(pad.left, pad.top + gH);
-  ctx.lineTo(pad.left + gW, pad.top + gH);
-  ctx.stroke();
-
   // --- Grid lines ---
-  ctx.strokeStyle = '#e0e0e0';
-  ctx.lineWidth = 0.5;
-  for (let u = 0.25; u < 1; u += 0.25) {
+  ctx.strokeStyle = COL_GRID;
+  ctx.lineWidth = 0.6;
+  for (let u = 0.25; u <= 0.75; u += 0.25) {
     ctx.beginPath(); ctx.moveTo(pad.left, toY(u)); ctx.lineTo(pad.left + gW, toY(u)); ctx.stroke();
   }
+
+  // --- Axes ---
+  ctx.strokeStyle = COL_AXIS;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top - 4);
+  ctx.lineTo(pad.left, pad.top + gH);
+  ctx.lineTo(pad.left + gW + 4, pad.top + gH);
+  ctx.stroke();
 
   // --- SAU function ---
   function sauVal(x) {
@@ -1060,82 +1431,93 @@ function drawSAUPreview(c) {
     switch (curve.type) {
       case 'linear': return t;
       case 'polynomial': return Math.pow(t, curve.degree || 2);
-      case 'exponential': { const r = curve.expRate || 2; return (Math.exp(r*t)-1)/(Math.exp(r)-1); }
+      case 'exponential': { const r = curve.expRate || 5; return (Math.exp(r*t)-1)/(Math.exp(r)-1); }
       case 'scurve': { const k = curve.steepness || 5; const f = v => 1/(1+Math.exp(-k*(v-0.5))); return (f(t)-f(0))/(f(1)-f(0)); }
       default: return t;
     }
   }
 
-  // --- Draw curve ---
-  ctx.strokeStyle = '#2980b9';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  const steps = 120;
-  // Flat at 0 in excluded zone
-  ctx.moveTo(toX(extLow), toY(0));
-  ctx.lineTo(toX(dataMin), toY(0));
-  // Curve in acceptance range
+  // --- Draw curve (with area fill) ---
+  const steps = 150;
+  // Build path points — for minimize, U goes 1→0 so extensions swap
+  const leftU = isMax ? 0 : 1;
+  const rightU = isMax ? 1 : 0;
+  const pts = [];
+  pts.push({ x: toX(extLow), y: toY(leftU) });
+  pts.push({ x: toX(dataMin), y: toY(leftU) });
   for (let i = 0; i <= steps; i++) {
-    const x = dataMin + (i / steps) * range;
-    const u = sauVal(x);
-    const px = toX(x), py = toY(u);
-    if (i === 0) ctx.lineTo(px, py); else ctx.lineTo(px, py);
+    const xv = dataMin + (i / steps) * range;
+    pts.push({ x: toX(xv), y: toY(sauVal(xv)) });
   }
-  // Flat at 1 in excess zone
-  ctx.lineTo(toX(extHigh), toY(1));
+  pts.push({ x: toX(extHigh), y: toY(rightU) });
+
+  // Fill area under curve
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.lineTo(pts[pts.length-1].x, toY(0));
+  ctx.lineTo(pts[0].x, toY(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(218,119,86,0.04)';
+  ctx.fill();
+
+  // Stroke curve
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.strokeStyle = COL_CURVE;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // --- Labels ---
-  ctx.font = '600 18px system-ui, sans-serif';
-  ctx.fillStyle = '#2c3e50';
+  // --- Y-axis label ---
+  const fontSize = Math.max(9, Math.min(13, H * 0.07));
+  const smallFont = Math.max(8, Math.min(11, H * 0.055));
+  ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+  ctx.fillStyle = COL_AXIS;
   ctx.textAlign = 'center';
-  // Y-axis: "Utility"
   ctx.save();
-  ctx.translate(14, pad.top + gH / 2);
+  ctx.translate(12, pad.top + gH / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.fillText('Utility', 0, 0);
   ctx.restore();
-  // X-axis: "Attribute Value"
-  ctx.fillText('Attribute Value', pad.left + gW / 2, H - 4);
 
-  // Y tick labels
-  ctx.font = '11px system-ui';
+  // --- X-axis label ---
+  ctx.fillText('Attribute Value', pad.left + gW / 2, H - 2);
+
+  // --- Y tick labels ---
+  ctx.font = `${smallFont}px system-ui`;
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#555';
+  ctx.fillStyle = COL_LABEL;
   ctx.fillText('0', pad.left - 5, toY(0) + 4);
   ctx.fillText('1', pad.left - 5, toY(1) + 4);
   ctx.fillText('0.5', pad.left - 5, toY(0.5) + 4);
 
-  // X tick labels
+  // --- X tick labels ---
   ctx.textAlign = 'center';
-  ctx.fillText(dataMin.toFixed(1), toX(dataMin), pad.top + gH + 16);
-  ctx.fillText(dataMax.toFixed(1), toX(dataMax), pad.top + gH + 16);
+  ctx.fillText(+dataMin.toFixed(1), toX(dataMin), pad.top + gH + 14);
+  if (accW > 40) ctx.fillText(+dataMax.toFixed(1), toX(dataMax), pad.top + gH + 14);
 
-  // --- Zone labels ---
-  ctx.font = '10px system-ui';
-  ctx.fillStyle = 'rgba(80,80,120,0.6)';
-  const exclMid = (pad.left + toX(dataMin)) / 2;
-  if (toX(dataMin) - pad.left > 36) {
+  // --- Zone labels (swap for minimize) ---
+  ctx.font = `${Math.max(8, smallFont - 1)}px system-ui`;
+  ctx.fillStyle = 'rgba(125,116,106,0.6)';
+  const leftLabel = isMax ? 'Excluded' : 'Excess (U=1)';
+  const rightLabel = isMax ? 'Excess (U=1)' : 'Excluded';
+  const exclW = toX(dataMin) - pad.left;
+  if (exclW > 30) { ctx.textAlign = 'center'; ctx.fillText(leftLabel, pad.left + exclW/2, pad.top + 13); }
+  const excessW = pad.left + gW - toX(dataMax);
+  if (excessW > 30) {
     ctx.textAlign = 'center';
-    ctx.fillText('Excluded', exclMid, pad.top + 14);
+    const exMid = toX(dataMax) + excessW/2;
+    ctx.fillText(rightLabel, exMid, pad.top + 13);
   }
-  const excessMid = (toX(dataMax) + pad.left + gW) / 2;
-  if (pad.left + gW - toX(dataMax) > 36) {
-    ctx.textAlign = 'center';
-    ctx.fillText('Excess', excessMid, pad.top + 14);
-    ctx.fillText('(U=1)', excessMid, pad.top + 26);
-  }
-  const accMid = (toX(dataMin) + toX(dataMax)) / 2;
-  ctx.fillStyle = 'rgba(160,130,20,0.7)';
-  ctx.font = 'italic 11px system-ui';
-  ctx.textAlign = 'center';
-  ctx.fillText('Acceptance Range', accMid, pad.top + gH - 6);
 
-  // --- Curve type label ---
-  ctx.font = '600 11px system-ui';
-  ctx.fillStyle = '#2980b9';
+  // --- Curve type label in acceptance zone ---
   const lbl = curve.type === 'scurve' ? 'S-Curve' : curve.type.charAt(0).toUpperCase() + curve.type.slice(1);
-  ctx.fillText(lbl, accMid, pad.top + 14);
+  ctx.font = `600 ${fontSize}px system-ui`;
+  ctx.fillStyle = COL_CURVE;
+  ctx.textAlign = 'center';
+  ctx.fillText(lbl, accX + accW/2, pad.top + gH - 8);
 }
 
 function updateMAUCurve(c) {
@@ -1145,13 +1527,25 @@ function updateMAUCurve(c) {
   if (type === 'polynomial') {
     f.innerHTML = `<label>Degree</label><input type="number" min="2" max="10" value="${state.mauCurves[c].degree||2}" oninput="state.mauCurves[${c}].degree=parseInt(this.value)||2;drawSAUPreview(${c})" style="width:80px;">`;
   } else if (type === 'exponential') {
-    f.innerHTML = `<label>Rate</label><input type="number" step="0.1" min="0.1" max="10" value="${state.mauCurves[c].expRate||2}" oninput="state.mauCurves[${c}].expRate=parseFloat(this.value)||2;drawSAUPreview(${c})" style="width:80px;">`;
+    f.innerHTML = `<label>Rate</label><input type="number" step="0.5" min="0.5" max="15" value="${state.mauCurves[c].expRate||5}" oninput="state.mauCurves[${c}].expRate=parseFloat(this.value)||5;drawSAUPreview(${c})" style="width:80px;">`;
   } else if (type === 'scurve') {
     f.innerHTML = `<label>Steepness</label><input type="number" step="0.5" min="0.5" max="20" value="${state.mauCurves[c].steepness||5}" oninput="state.mauCurves[${c}].steepness=parseFloat(this.value)||5;drawSAUPreview(${c})" style="width:80px;">`;
   } else {
-    f.innerHTML = `<label>Parameters</label><span style="font-size:0.78rem;color:var(--text-light);">None needed</span>`;
+    f.innerHTML = '';
   }
   drawSAUPreview(c);
+}
+
+// ========== RANKING HELPER (handles ties) ==========
+function computeRanks(sorted) {
+  // sorted = [{alt, score}, ...] already sorted descending by score
+  const ranks = new Array(sorted.length);
+  let rank = 1;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i].score !== sorted[i - 1].score) rank = i + 1;
+    ranks[sorted[i].alt] = rank;
+  }
+  return ranks;
 }
 
 // ========== ANALYSIS ENGINE ==========
@@ -1193,8 +1587,8 @@ function calcLexicographic() {
   const isMin = state.optDir[topCrit] === 'min';
   const scores = state.values.map((row, a) => ({ alt: a, val: row[topCrit] }));
   scores.sort((a, b) => isMin ? a.val - b.val : b.val - a.val);
-  const ranks = new Array(state.numAlts);
-  scores.forEach((s, i) => ranks[s.alt] = i + 1);
+  const sorted = scores.map(s => ({ alt: s.alt, score: isMin ? -s.val : s.val }));
+  const ranks = computeRanks(sorted);
   return { critOrder, topCrit, ranks, scores };
 }
 
@@ -1236,8 +1630,7 @@ function calcQFD() {
     sums.push(s); wtSums.push(+ws.toFixed(3));
   }
   const sorted = wtSums.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
-  const ranks = new Array(state.numAlts);
-  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  const ranks = computeRanks(sorted);
   return { sums, wtSums, ranks };
 }
 
@@ -1261,8 +1654,7 @@ function calcMDM() {
     scores.push(+s.toFixed(4));
   }
   const sorted = scores.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
-  const ranks = new Array(state.numAlts);
-  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  const ranks = computeRanks(sorted);
   return { normalized, scores, ranks };
 }
 
@@ -1270,7 +1662,10 @@ function calcMAU() {
   const sauFunctions = [];
   for (let c = 0; c < state.numCrit; c++) {
     const vals = state.values.map(r => r[c]);
-    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+    let minV = (state.mauCurves[c].lowerBound != null && !isNaN(state.mauCurves[c].lowerBound)) ? state.mauCurves[c].lowerBound : rawMin;
+    let maxV = (state.mauCurves[c].upperBound != null && !isNaN(state.mauCurves[c].upperBound)) ? state.mauCurves[c].upperBound : rawMax;
+    if (minV > maxV) { const tmp = minV; minV = maxV; maxV = tmp; }
     const range = maxV - minV || 1;
     const isMax = state.optDir[c] === 'max';
     const curve = state.mauCurves[c];
@@ -1282,7 +1677,7 @@ function calcMAU() {
       switch (curve.type) {
         case 'linear': u = t; break;
         case 'polynomial': u = Math.pow(t, curve.degree || 2); break;
-        case 'exponential': { const r = curve.expRate || 2; u = (Math.exp(r*t)-1)/(Math.exp(r)-1); break; }
+        case 'exponential': { const r = curve.expRate || 5; u = (Math.exp(r*t)-1)/(Math.exp(r)-1); break; }
         case 'scurve': {
           const k = curve.steepness || 5;
           const f = v => 1/(1+Math.exp(-k*(v-0.5)));
@@ -1305,8 +1700,7 @@ function calcMAU() {
     scores.push(+s.toFixed(4));
   }
   const sorted = scores.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
-  const ranks = new Array(state.numAlts);
-  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  const ranks = computeRanks(sorted);
   return { utilities, scores, ranks, sauFunctions };
 }
 
@@ -1353,7 +1747,7 @@ function renderResults(results) {
       for (const d of Object.values(results)) { s += d.ranks[a]; c++; }
       return { alt: a, avg: s/c };
     }).sort((a, b) => a.avg - b.avg);
-    html += `<div style="margin-top:0.75rem;padding:0.75rem;background:#d4edda;border-radius:8px;font-size:0.88rem;">
+    html += `<div style="margin-top:0.75rem;padding:0.75rem;background:var(--line-soft);border:1px solid var(--line);border-radius:8px;font-size:0.82rem;">
       <strong>Overall Best (by average rank):</strong> ${esc(state.altNames[avgRanks[0].alt])} (avg rank: ${avgRanks[0].avg.toFixed(1)})
     </div></div>`;
   }
@@ -1374,11 +1768,11 @@ function renderLexResults(data) {
   html += '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
   data.critOrder.forEach(co => html += `<th>${state.weights[co.i]}</th>`);
   html += '<th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
-  data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:#fff3cd;font-weight:600;':''}">${esc(state.critNames[co.i])} (${state.optDir[co.i]})</td>`);
+  data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:var(--line-soft);font-weight:600;':''}">${esc(state.critNames[co.i])} (${state.optDir[co.i]})</td>`);
   html += '<td></td></tr>';
   for (let a = 0; a < state.numAlts; a++) {
     html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
-    data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:#fff3cd;':''}">${state.values[a][co.i]}</td>`);
+    data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:var(--line-soft);':''}">${state.values[a][co.i]}</td>`);
     html += `<td class="rank-cell">${data.ranks[a]}</td></tr>`;
   }
   html += '</table></div>';
@@ -1394,14 +1788,14 @@ function renderPughResults(data) {
     html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.critNames[c])}</td>`;
     for (let a = 0; a < state.numAlts; a++) {
       const v = data.matrix[a][c];
-      const color = v==='+'?'#27ae60':v==='-'?'#e74c3c':'#7f8c8d';
+      const color = v==='+'?'var(--ink)':v==='-'?'var(--ink-muted)':'var(--line)';
       html += `<td style="color:${color};font-weight:600;">${v}</td>`;
     }
     html += '</tr>';
   }
   ['same','plus','minus'].forEach((k, i) => {
     const label = ['&Sigma; S','&Sigma; +','&Sigma; &minus;'][i];
-    html += `<tr style="background:#d4edda;"><td style="font-weight:600;">${label}</td>`;
+    html += `<tr style="background:var(--line-soft);"><td style="font-weight:600;">${label}</td>`;
     for (let a = 0; a < state.numAlts; a++) html += `<td>${data.sums[k][a]}</td>`;
     html += '</tr>';
   });
@@ -1481,17 +1875,21 @@ function renderSAUCharts(mauData) {
       type: 'scatter',
       data: {
         datasets: [
-          { label: 'SAU Curve', data: points, showLine: true, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.1)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3 },
-          { label: 'Alternatives', data: altPts.map(p=>({x:p.x,y:p.y})), pointRadius: 6, pointBackgroundColor: '#e74c3c', pointBorderColor: '#c0392b', pointBorderWidth: 2, showLine: false }
+          { label: 'SAU Curve', data: points, showLine: true, borderColor: '#da7756', backgroundColor: 'rgba(218,119,86,0.06)', fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.3 },
+          { label: 'Alternatives', data: altPts.map(p=>({x:p.x,y:p.y})), pointRadius: 4, pointBackgroundColor: '#ece5dd', pointBorderColor: '#da7756', pointBorderWidth: 1.5, showLine: false }
         ]
       },
       options: {
         responsive: true,
         plugins: {
-          title: { display: true, text: state.critNames[c]+' ('+state.mauCurves[c].type+')', font: { size: 12 } },
+          title: { display: true, text: state.critNames[c]+' ('+state.mauCurves[c].type+')', font: { size: 12 }, color: '#ece5dd' },
+          legend: { labels: { color: '#b8ada1' } },
           tooltip: { callbacks: { label: function(ctx) { if (ctx.datasetIndex===1) return altPts[ctx.dataIndex].label+': ('+ctx.parsed.x+', '+ctx.parsed.y.toFixed(3)+')'; return 'U('+ctx.parsed.x+') = '+ctx.parsed.y.toFixed(3); } } }
         },
-        scales: { x: { title: { display: true, text: state.critNames[c] } }, y: { title: { display: true, text: 'Utility' }, min: 0, max: 1 } }
+        scales: {
+          x: { title: { display: true, text: state.critNames[c], color: '#b8ada1' }, ticks: { color: '#7d746a' }, grid: { color: '#3a342c' } },
+          y: { title: { display: true, text: 'Utility', color: '#b8ada1' }, ticks: { color: '#7d746a' }, grid: { color: '#3a342c' }, min: 0, max: 1 }
+        }
       }
     });
   }
@@ -1633,6 +2031,8 @@ function doExportExcel(filename) {
     }
     rows.push([]);
     rows.push(['Curve Type', ...state.mauCurves.map(c => c.type)]);
+    rows.push(['Lower Bound', ...state.mauCurves.map(c => c.lowerBound != null ? c.lowerBound : '')]);
+    rows.push(['Upper Bound', ...state.mauCurves.map(c => c.upperBound != null ? c.upperBound : '')]);
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:20}, ...state.critNames.map(() => ({wch:18})), {wch:10}, {wch:8}];
     XLSX.utils.book_append_sheet(wb, ws, 'MAU');
