@@ -436,7 +436,7 @@
   <div id="step4" class="step-content hidden">
     <div id="resultsContainer"></div>
     <div class="btn-group">
-      <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back</button>
+      <button class="btn btn-secondary" onclick="goToStep(3)">&larr; Back</button>
       <button class="btn btn-primary" onclick="exportAllToExcel()">Export</button>
       <button class="btn btn-success" onclick="showSaveModal()">Save</button>
     </div>
@@ -618,6 +618,7 @@ function loadVersion(id) {
 
   state.layout = 'alt-rows';
   activeVersionId = id;
+  configBuiltForSignature = null;
 
   renderDataTable();
   validateInputs();
@@ -872,6 +873,7 @@ function applyImport() {
   state.weights = [...d.weights];
   state.optDir = [...d.goals];
   state.values = d.values.map(r => [...r]);
+  configBuiltForSignature = null;
   closeImportModal();
   renderDataTable();
   validateInputs();
@@ -1176,14 +1178,20 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 // ========== NAVIGATION ==========
 function syncAllInputs() { /* state is synced live via oninput handlers */ }
 
+let currentStep = 1;
+let configBuiltForSignature = null; // tracks when config was last built
+
+function getConfigSignature() {
+  // Captures the shape of data + selected methods so we know if config needs rebuilding
+  return state.numAlts + ':' + state.numCrit + ':' + [...state.selectedMethods].sort().join(',');
+}
+
 function goToStep(n) {
-  // Validation when moving forward
-  if (n >= 2) {
+  // Always validate step 1 data when leaving step 1 (going to 2, 3, or 4)
+  if (n >= 2 && currentStep === 1) {
     syncAllInputs();
     validationShown = true;
-    if (!validateInputs()) {
-      return;
-    }
+    if (!validateInputs()) { return; }
     const wSum = state.weights.reduce((a, b) => a + b, 0);
     if (Math.abs(wSum - 1.0) > 0.02) {
       autoNormalizeWeights();
@@ -1191,16 +1199,32 @@ function goToStep(n) {
       validateInputs();
     }
   }
+
+  // Check methods are selected when going to step 3+
   if (n >= 3) {
-    syncAllInputs();
     if (state.selectedMethods.size === 0) { alert('Please select at least one method.'); return; }
-    buildConfigPanels();
+    // Only rebuild config if data shape or methods changed
+    const sig = getConfigSignature();
+    if (configBuiltForSignature !== sig) {
+      buildConfigPanels();
+      configBuiltForSignature = sig;
+    }
   }
+
   if (n === 4) {
     if (!state.lastResults) { runAnalysis(); return; }
   }
 
   if (n === 1) { validationShown = false; const vb = document.getElementById('validationBar'); vb.className = 'validation-bar hidden'; vb.innerHTML = ''; }
+
+  // When going back to step 2, re-sync selected card styles
+  if (n === 2) {
+    document.querySelectorAll('.method-card').forEach(el => {
+      el.classList.toggle('selected', state.selectedMethods.has(el.dataset.method));
+    });
+  }
+
+  currentStep = n;
   document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
   document.getElementById('step' + n).classList.remove('hidden');
   document.querySelectorAll('.step-item').forEach(el => {
@@ -1227,6 +1251,14 @@ function toggleLearn(id) {
 
 // ========== CONFIG PANELS ==========
 function buildConfigPanels() {
+  _buildConfigHTML(true);
+}
+
+function rebuildConfigUI() {
+  _buildConfigHTML(false);
+}
+
+function _buildConfigHTML(resetState) {
   const container = document.getElementById('configPanels');
   let html = '';
 
@@ -1244,7 +1276,9 @@ function buildConfigPanels() {
   }
 
   if (state.selectedMethods.has('qfd')) {
-    state.qfdScores = state.values.map(row => row.map(() => 3));
+    if (resetState || !state.qfdScores || state.qfdScores.length !== state.numAlts) {
+      state.qfdScores = state.values.map(row => row.map(() => 3));
+    }
     html += `<div class="config-panel">
       <h3>QFD-like Method</h3>
       <div class="info-box">Rate each cell: <strong>0</strong> (none), <strong>1</strong> (weak), <strong>3</strong> (moderate), <strong>9</strong> (strong).</div>
@@ -1253,11 +1287,13 @@ function buildConfigPanels() {
   }
 
   if (state.selectedMethods.has('mdm')) {
-    state.mdmMin = []; state.mdmMax = [];
-    for (let c = 0; c < state.numCrit; c++) {
-      const vals = state.values.map(r => r[c]);
-      state.mdmMin.push(0);
-      state.mdmMax.push(Math.ceil(Math.max(...vals) * 1.2) || 100);
+    if (resetState || !state.mdmMin || state.mdmMin.length !== state.numCrit) {
+      state.mdmMin = []; state.mdmMax = [];
+      for (let c = 0; c < state.numCrit; c++) {
+        const vals = state.values.map(r => r[c]);
+        state.mdmMin.push(0);
+        state.mdmMax.push(Math.ceil(Math.max(...vals) * 1.2) || 100);
+      }
     }
     html += `<div class="config-panel">
       <h3>Modified Decision Matrix</h3>
@@ -1267,10 +1303,12 @@ function buildConfigPanels() {
   }
 
   if (state.selectedMethods.has('mau')) {
-    state.mauCurves = state.critNames.map((_, c) => {
-      const vals = state.values.map(r => r[c]);
-      return { type: 'linear', degree: 2, expRate: 5, steepness: 5, lowerBound: Math.min(...vals), upperBound: Math.max(...vals) };
-    });
+    if (resetState || !state.mauCurves || state.mauCurves.length !== state.numCrit) {
+      state.mauCurves = state.critNames.map((_, c) => {
+        const vals = state.values.map(r => r[c]);
+        return { type: 'linear', degree: 2, expRate: 5, steepness: 5, lowerBound: Math.min(...vals), upperBound: Math.max(...vals) };
+      });
+    }
     html += `<div class="config-panel">
       <h3>Multi-Attribute Utility (MAU)</h3>
       <div class="info-box">Choose a utility curve shape per criterion.</div>
@@ -1297,9 +1335,10 @@ function buildQFDTable() {
   for (let c = 0; c < state.numCrit; c++) {
     html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.critNames[c])} (w=${state.weights[c]})</td>`;
     for (let a = 0; a < state.numAlts; a++) {
+      const sv = (state.qfdScores[a] && state.qfdScores[a][c]) || 3;
       html += `<td><select onchange="state.qfdScores[${a}][${c}]=parseInt(this.value)" style="font-size:0.82rem;">
-        <option value="0">0</option><option value="1">1</option>
-        <option value="3" selected>3</option><option value="9">9</option>
+        <option value="0" ${sv===0?'selected':''}>0</option><option value="1" ${sv===1?'selected':''}>1</option>
+        <option value="3" ${sv===3?'selected':''}>3</option><option value="9" ${sv===9?'selected':''}>9</option>
       </select></td>`;
     }
     html += '</tr>';
@@ -1340,10 +1379,10 @@ function buildMAUConfig() {
         <div class="field" style="min-width:130px;">
           <label>Curve</label>
           <select id="mauType${c}" onchange="updateMAUCurve(${c})">
-            <option value="linear">Linear</option>
-            <option value="polynomial">Polynomial</option>
-            <option value="exponential">Exponential</option>
-            <option value="scurve">S-Curve</option>
+            <option value="linear" ${state.mauCurves[c].type==='linear'?'selected':''}>Linear</option>
+            <option value="polynomial" ${state.mauCurves[c].type==='polynomial'?'selected':''}>Polynomial</option>
+            <option value="exponential" ${state.mauCurves[c].type==='exponential'?'selected':''}>Exponential</option>
+            <option value="scurve" ${state.mauCurves[c].type==='scurve'?'selected':''}>S-Curve</option>
           </select>
         </div>
         <div class="field" id="mauParamField${c}"></div>
@@ -1362,6 +1401,12 @@ function buildMAUConfig() {
     </div>`;
   }
   container.innerHTML = html;
+  // Restore param fields for non-linear curves, then draw previews
+  for (let c = 0; c < state.numCrit; c++) {
+    if (state.mauCurves[c].type !== 'linear') {
+      updateMAUCurve(c); // populates param field and draws preview
+    }
+  }
   requestAnimationFrame(() => {
     for (let c = 0; c < state.numCrit; c++) drawSAUPreview(c);
   });
