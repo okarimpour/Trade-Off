@@ -34,7 +34,11 @@
   header .hbtn { padding: 0.3rem 0.7rem; border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
   header .hbtn:hover { border-color: var(--ink-muted); color: var(--ink); }
 
-  .container { max-width: 1060px; margin: 0 auto; padding: 1.25rem 1.5rem; }
+  .container { max-width: min(92vw, 1060px); margin: 0 auto; padding: 1.25rem 1.5rem; }
+  @media (min-width: 1200px) { .container { max-width: min(92vw, 1140px); } }
+  @media (min-width: 1400px) { .container { max-width: min(92vw, 1340px); } }
+  @media (min-width: 1600px) { .container { max-width: min(92vw, 1540px); } }
+  @media (min-width: 1920px) { .container { max-width: min(92vw, 1800px); } }
 
   /* ─── Stepper ─── */
   .stepper { display: flex; justify-content: center; gap: 0; margin-bottom: 1.25rem; background: var(--card); border-radius: var(--radius); padding: 0.5rem 1rem; border: 1px solid var(--line); }
@@ -62,7 +66,8 @@
 
   /* ─── Tables ─── */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { padding: 0.4rem 0.5rem; text-align: center; border: 1px solid var(--line); }
+  th, td { padding: 0.4rem 0.5rem; text-align: center; border: 1px solid var(--line); min-width: 80px; }
+  th:first-child, td:first-child { min-width: 120px; text-align: left; }
   th { background: var(--line); color: var(--ink); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.01em; }
   td input, td select { border: none; text-align: center; padding: 0.2rem; background: transparent; font-size: 13px; width: 100%; }
   td input:focus, td select:focus { background: rgba(218,119,86,0.08); box-shadow: none; }
@@ -219,6 +224,12 @@
   .import-drop { border: 2px dashed var(--line); border-radius: 8px; padding: 2rem 1rem; text-align: center; color: var(--ink-muted); font-size: 0.8rem; cursor: pointer; transition: border-color 0.15s; }
   .import-drop:hover, .import-drop.dragover { border-color: var(--accent); color: var(--ink); }
   .import-drop input[type="file"] { display: none; }
+
+  @media (min-width: 1400px) {
+    .chart-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .method-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+    .sau-preview-wrap { height: 220px; }
+  }
 
   @media (max-width: 768px) {
     .stepper { flex-wrap: wrap; gap: 0.2rem; }
@@ -450,8 +461,8 @@
   <div class="modal wide">
     <h3>Import Data</h3>
     <div class="import-tabs">
-      <button class="import-tab active" onclick="switchImportTab('paste')">Paste</button>
-      <button class="import-tab" onclick="switchImportTab('file')">File (CSV / Excel)</button>
+      <button class="import-tab active" id="importTabPaste" onclick="switchImportTab('paste')">Paste</button>
+      <button class="import-tab" id="importTabFile" onclick="switchImportTab('file')">File (CSV / Excel)</button>
     </div>
     <div class="import-pane active" id="importPanePaste">
       <p class="import-hint">Paste tab- or comma-separated data. First row = criterion names, first column = alternative names. Optionally include a Weights row and a Goal row (max/min).</p>
@@ -468,6 +479,7 @@ Goal	max	min	max"></textarea>
       </div>
       <p class="import-hint" style="margin-top:0.5rem;">Same format: first row = criteria, first column = alternatives. Optional Weights and Goal rows.</p>
     </div>
+    <div id="importError" style="display:none;margin-top:0.5rem;padding:0.4rem 0.7rem;background:var(--red-soft);border:1px solid rgba(212,89,78,0.2);color:#e87c72;border-radius:6px;font-size:0.72rem;"></div>
     <div id="importPreview" style="display:none;margin-top:0.75rem;">
       <p style="font-size:0.75rem;color:var(--ink-soft);margin-bottom:0.35rem;" id="importPreviewLabel"></p>
       <div style="overflow-x:auto;max-height:140px;overflow-y:auto;border:1px solid var(--line);border-radius:4px;">
@@ -677,12 +689,19 @@ function commitRename(id) {
 // ========== IMPORT ==========
 let importParsedData = null;
 
+function showImportError(msg) {
+  const el = document.getElementById('importError');
+  if (msg) { el.textContent = msg; el.style.display = 'block'; }
+  else { el.style.display = 'none'; el.textContent = ''; }
+}
+
 function openImportModal() {
   importParsedData = null;
   document.getElementById('importPasteArea').value = '';
   document.getElementById('importFileInput').value = '';
   document.getElementById('importPreview').style.display = 'none';
   document.getElementById('importApplyBtn').disabled = true;
+  showImportError(null);
   switchImportTab('paste');
   document.getElementById('importModal').classList.add('show');
 }
@@ -695,26 +714,28 @@ function switchImportTab(tab) {
   document.querySelectorAll('.import-tab').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.import-pane').forEach(el => el.classList.remove('active'));
   if (tab === 'paste') {
-    document.querySelectorAll('.import-tab')[0].classList.add('active');
+    document.getElementById('importTabPaste').classList.add('active');
     document.getElementById('importPanePaste').classList.add('active');
   } else {
-    document.querySelectorAll('.import-tab')[1].classList.add('active');
+    document.getElementById('importTabFile').classList.add('active');
     document.getElementById('importPaneFile').classList.add('active');
   }
 }
 
 // Parse pasted text on input
-document.addEventListener('DOMContentLoaded', () => {
+// Attach paste listener — runs after DOM is ready (script is at bottom of body)
+(function() {
   const ta = document.getElementById('importPasteArea');
   if (ta) ta.addEventListener('input', () => {
     const text = ta.value.trim();
-    if (!text) { importParsedData = null; document.getElementById('importPreview').style.display = 'none'; document.getElementById('importApplyBtn').disabled = true; return; }
+    if (!text) { importParsedData = null; document.getElementById('importPreview').style.display = 'none'; document.getElementById('importApplyBtn').disabled = true; showImportError(null); return; }
     parseImportText(text);
   });
-});
+})();
 
 function handleImportFile(file) {
   if (!file) return;
+  showImportError(null);
   const ext = file.name.split('.').pop().toLowerCase();
   if (ext === 'xlsx' || ext === 'xls') {
     const reader = new FileReader();
@@ -727,6 +748,7 @@ function handleImportFile(file) {
       } catch (err) {
         importParsedData = null;
         showImportPreview(null);
+        showImportError('Could not read Excel file. Make sure it is a valid .xlsx or .xls file.');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -742,8 +764,9 @@ function parseImportText(text) {
   const firstLine = text.split('\n')[0];
   const delim = firstLine.includes('\t') ? '\t' : ',';
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (lines.length < 2) { importParsedData = null; showImportPreview(null); return; }
+  if (lines.length < 2) { importParsedData = null; showImportPreview(null); showImportError('Need at least a header row and two data rows.'); return; }
 
+  showImportError(null);
   const rows = lines.map(l => {
     // Handle quoted CSV fields
     if (delim === ',') {
@@ -790,7 +813,7 @@ function parseImportText(text) {
     }
   }
 
-  if (altNames.length < 2) { importParsedData = null; showImportPreview(null); return; }
+  if (altNames.length < 2) { importParsedData = null; showImportPreview(null); showImportError('Need at least 2 alternatives (data rows).'); return; }
 
   // Default weights: equal
   if (!weights) {
@@ -1084,7 +1107,7 @@ function renderDataTable() {
   html += '</tr>';
 
   // Header row: criterion names
-  html += '<tr><th style="min-width:110px;"></th>';
+  html += '<tr><th></th>';
   for (let c = 0; c < nC; c++) {
     html += `<th><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="color:var(--ink);font-weight:600;background:transparent;border:1px solid rgba(236,229,221,0.2);border-radius:4px;text-align:center;"></th>`;
   }
