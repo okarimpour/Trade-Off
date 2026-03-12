@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade-Off Analysis Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #2c3e50;
+    --primary-light: #34495e;
+    --accent: #3498db;
+    --accent-dark: #2980b9;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    --bg: #f5f6fa;
+    --card: #ffffff;
+    --border: #dcdde1;
+    --text: #2c3e50;
+    --text-light: #7f8c8d;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+  header .left h1 { font-size: 1.3rem; font-weight: 600; }
+  header .left p { font-size: 0.8rem; opacity: 0.8; }
+  header .right { display: flex; gap: 0.5rem; }
+  header .hbtn { padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+  header .hbtn:hover { background: rgba(255,255,255,0.1); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+  /* Stepper */
+  .stepper { display: flex; justify-content: center; gap: 0; margin-bottom: 1.5rem; background: var(--card); border-radius: 12px; padding: 0.8rem 1.5rem; box-shadow: var(--shadow); }
+  .step-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 0.85rem; color: var(--text-light); }
+  .step-item:hover { background: var(--bg); }
+  .step-item.active { color: var(--accent); font-weight: 600; }
+  .step-item.completed { color: var(--success); }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; border: 2px solid var(--border); }
+  .step-item.active .step-num { background: var(--accent); color: white; border-color: var(--accent); }
+  .step-item.completed .step-num { background: var(--success); color: white; border-color: var(--success); }
+  .step-connector { width: 40px; height: 2px; background: var(--border); align-self: center; }
+  .step-connector.completed { background: var(--success); }
+
+  .card { background: var(--card); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .card h2 { font-size: 1.05rem; margin-bottom: 0.2rem; color: var(--primary); }
+  .card .subtitle { font-size: 0.82rem; color: var(--text-light); margin-bottom: 1rem; }
+
+  label { font-size: 0.82rem; font-weight: 500; display: block; margin-bottom: 0.2rem; }
+  input, select { padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; font-family: inherit; transition: border-color 0.2s; width: 100%; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+  .inline-fields { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .inline-fields .field { flex: 1; min-width: 120px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th, td { padding: 0.5rem 0.6rem; text-align: center; border: 1px solid var(--border); }
+  th { background: var(--primary); color: white; font-weight: 500; font-size: 0.78rem; }
+  td input, td select { border: none; text-align: center; padding: 0.25rem; background: transparent; font-size: 0.82rem; width: 100%; }
+  td input:focus, td select:focus { background: #eef5ff; box-shadow: none; }
+  tr:nth-child(even) { background: #f9f9fb; }
+  tr:hover { background: #eef2f7; }
+  .rank-cell { background: #d4edda !important; font-weight: 700; color: var(--success); }
+  .score-cell { background: #d1ecf1 !important; font-weight: 600; color: #0c5460; }
+
+  .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-secondary:hover { background: #bdc3c7; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #219a52; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #c0392b; }
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+  .btn-group { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end; flex-wrap: wrap; }
+
+  /* Validation */
+  .validation-bar { padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .validation-bar.error { background: #fdecea; border: 1px solid #f5c6cb; color: #721c24; }
+  .validation-bar.warning { background: #fff8e1; border: 1px solid #ffeeba; color: #856404; }
+  .validation-bar.ok { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+  .weight-indicator { font-size: 0.78rem; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 600; display: inline-block; margin-left: 0.5rem; }
+
+  /* Method cards */
+  .method-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .method-card { border: 2px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; }
+  .method-card:hover { border-color: var(--accent); }
+  .method-card.selected { border-color: var(--accent); background: #eef5ff; }
+  .method-card .check { position: absolute; top: 0.5rem; right: 0.5rem; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+  .method-card.selected .check { background: var(--accent); border-color: var(--accent); color: white; }
+  .method-card h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .method-card p { font-size: 0.75rem; color: var(--text-light); line-height: 1.3; }
+
+  .tag { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem; }
+  .tag-simple { background: #d4edda; color: #155724; }
+  .tag-moderate { background: #fff3cd; color: #856404; }
+  .tag-advanced { background: #d1ecf1; color: #0c5460; }
+
+  /* Info/Learn more panels */
+  .info-box { background: #eef5ff; border-left: 3px solid var(--accent); padding: 0.6rem 0.9rem; border-radius: 0 6px 6px 0; font-size: 0.8rem; margin: 0.75rem 0; color: var(--primary-light); }
+  .learn-toggle { font-size: 0.78rem; color: var(--accent); cursor: pointer; text-decoration: underline; margin-top: 0.3rem; display: inline-block; }
+  .learn-content { display: none; background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; font-size: 0.8rem; line-height: 1.6; }
+  .learn-content.open { display: block; }
+  .learn-content h4 { font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--primary); }
+  .learn-content ul { margin: 0.3rem 0 0.5rem 1.2rem; }
+  .learn-content li { margin-bottom: 0.2rem; }
+
+  .config-panel { border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem; background: #fafbfc; }
+  .config-panel h3 { font-size: 0.92rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+
+  .results-section { margin-bottom: 1.5rem; }
+  .results-section h3 { font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+
+  .ranking-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 700; color: white; }
+  .rank-1 { background: #f1c40f; color: #333; }
+  .rank-2 { background: #95a5a6; }
+  .rank-3 { background: #cd6133; }
+  .rank-other { background: var(--text-light); }
+
+  .comparison-table .best-rank { background: #d4edda; font-weight: 700; }
+
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .chart-container { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+
+  .sau-config-row { display: flex; gap: 0.75rem; align-items: start; padding: 0.8rem 0; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+  .sau-config-row .field { min-width: 100px; }
+  .sau-config-row label { font-size: 0.75rem; }
+  .sau-config-row .sau-controls { display: flex; flex-direction: column; gap: 0.5rem; min-width: 160px; }
+  .sau-preview-wrap { position: relative; width: 220px; height: 170px; flex-shrink: 0; }
+  .sau-preview-wrap canvas { width: 220px; height: 170px; border: 1px solid var(--border); border-radius: 6px; background: #fafbfc; }
+
+  .hidden { display: none !important; }
+
+  /* Drawer */
+  .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer { position: fixed; top: 0; right: -380px; width: 370px; height: 100%; background: white; z-index: 901; box-shadow: -4px 0 24px rgba(0,0,0,0.12); transition: right 0.3s ease; display: flex; flex-direction: column; }
+  .drawer.open { right: 0; }
+  .drawer-header { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--primary); color: white; flex-shrink: 0; }
+  .drawer-header h2 { font-size: 1rem; font-weight: 600; }
+  .drawer-close { background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; opacity: 0.7; padding: 0.2rem 0.4rem; border-radius: 4px; }
+  .drawer-close:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+  .drawer-footer { padding: 0.75rem 1.2rem; border-top: 1px solid var(--border); background: #fafbfc; flex-shrink: 0; }
+  .drawer-footer .version-new { display: flex; gap: 0.5rem; }
+  .drawer-footer .version-new input { flex: 1; font-size: 0.82rem; }
+
+  /* Version items inside drawer */
+  .version-item { padding: 0.65rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.82rem; transition: all 0.15s; }
+  .version-item:hover { background: #f0f4f8; border-color: #c0c4c8; }
+  .version-item.active { border-color: var(--accent); background: #eef5ff; }
+  .version-item .v-top { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+  .version-item .v-info { flex: 1; min-width: 0; overflow: hidden; }
+  .version-item .v-name { font-weight: 600; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 4px; transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .version-item .v-name:hover { background: #dde3e8; }
+  .version-item .v-name-editing { width: 100%; font-size: 0.82rem; padding: 0.15rem 0.3rem; font-weight: 600; border: 1px solid var(--accent); border-radius: 4px; outline: none; box-sizing: border-box; }
+  .version-item .v-meta { font-size: 0.68rem; color: var(--text-light); margin-top: 0.2rem; padding-left: 0.3rem; }
+  .version-item .v-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+  .v-icon-btn { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; color: var(--text-light); }
+  .v-icon-btn:hover { background: var(--bg); border-color: #aaa; color: var(--text); }
+  .v-icon-btn.load { color: white; background: var(--accent); border-color: var(--accent); }
+  .v-icon-btn.load:hover { background: var(--accent-dark); }
+  .v-icon-btn.export { color: var(--success); border-color: var(--success); }
+  .v-icon-btn.export:hover { background: var(--success); color: white; }
+  .v-icon-btn.del:hover { background: var(--danger); color: white; border-color: var(--danger); }
+  .v-empty { text-align: center; padding: 2rem 1rem; color: var(--text-light); font-size: 0.85rem; }
+  .v-empty svg { display: block; margin: 0 auto 0.75rem; opacity: 0.3; }
+
+  @media (max-width: 480px) { .drawer { width: 100%; right: -100%; } }
+
+  /* Modal overlay */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 1.5rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal h3 { margin-bottom: 1rem; }
+
+  @media (max-width: 768px) {
+    .stepper { flex-wrap: wrap; gap: 0.25rem; }
+    .step-connector { display: none; }
+    .inline-fields { flex-direction: column; }
+    .method-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="left">
+    <h1>Trade-Off Analysis Tool</h1>
+    <p>Quantify value and compare alternatives using multiple decision methods</p>
+  </div>
+  <div class="right">
+    <button class="hbtn" onclick="toggleDrawer()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Saved
+    </button>
+  </div>
+</header>
+
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+
+<!-- Saved Analyses Drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h2>Saved Analyses</h2>
+    <button class="drawer-close" onclick="toggleDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body" id="versionList"></div>
+  <div class="drawer-footer">
+    <div class="version-new">
+      <input type="text" id="versionNameInput" placeholder="Name this analysis..." onkeydown="if(event.key==='Enter')saveVersion()">
+      <button class="btn btn-sm btn-primary" onclick="saveVersion()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="step-item active" data-step="1"><div class="step-num">1</div><span>Define Data</span></div>
+    <div class="step-connector"></div>
+    <div class="step-item" data-step="2"><div class="step-num">2</div><span>Select Methods</span></div>
+    <div class="step-connector"></div>
+    <div class="step-item" data-step="3"><div class="step-num">3</div><span>Configure</span></div>
+    <div class="step-connector"></div>
+    <div class="step-item" data-step="4"><div class="step-num">4</div><span>Results</span></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="step1" class="step-content">
+    <div class="card">
+      <h2>Define Your Decision Problem</h2>
+      <p class="subtitle">Set up the alternatives and criteria for your trade-off analysis</p>
+
+      <div class="inline-fields" style="margin-bottom:1rem;">
+        <div class="field">
+          <label>Layout</label>
+          <select id="layoutSelect" onchange="updateLayout()">
+            <option value="alt-rows">Alternatives as Rows, Criteria as Columns</option>
+            <option value="alt-cols">Alternatives as Columns, Criteria as Rows</option>
+          </select>
+        </div>
+      </div>
+      <div class="inline-fields" style="margin-bottom:1rem;">
+        <div class="field">
+          <label>Number of Alternatives</label>
+          <input type="number" id="numAlts" value="4" min="2" max="20" onchange="rebuildTable()">
+        </div>
+        <div class="field">
+          <label>Number of Criteria</label>
+          <input type="number" id="numCrit" value="4" min="1" max="20" onchange="rebuildTable()">
+        </div>
+      </div>
+
+      <div class="info-box">
+        For each criterion, set the <strong>weight</strong> (importance — must sum to 1.0) and whether the goal is to <strong>minimize</strong> or <strong>maximize</strong>.
+      </div>
+
+      <!-- Live validation bar -->
+      <div id="validationBar" class="validation-bar ok">All inputs valid. Weights sum to 1.00.</div>
+
+      <div style="overflow-x:auto; margin-top:0.5rem;">
+        <table id="dataTable"></table>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="autoNormalizeWeights()">Auto-Normalize Weights</button>
+        <button class="btn btn-primary" onclick="goToStep(2)">Next: Select Methods &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step2" class="step-content hidden">
+    <div class="card">
+      <h2>Select Analysis Methods</h2>
+      <p class="subtitle">Choose one or more methods to compare rankings side by side</p>
+
+      <div class="method-grid">
+        <div class="method-card" data-method="lexicographic" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-simple">Simple</span>
+          <h3>Lexicographic</h3>
+          <p>Rank alternatives by the single most important attribute.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnLex')">Learn more</span>
+          <div class="learn-content" id="learnLex">
+            <h4>How it works</h4>
+            <ul>
+              <li>Rank the criteria by weight (importance).</li>
+              <li>The criterion with the highest weight is the deciding factor.</li>
+              <li>Alternatives are ranked based solely on their score in that top criterion.</li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>Very simple and fast, but ignores all criteria except the most important one. Best used as a quick initial filter.</p>
+          </div>
+        </div>
+
+        <div class="method-card" data-method="pugh" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-simple">Simple</span>
+          <h3>Pugh Method</h3>
+          <p>Compare against a baseline using +, S, &minus; scoring.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnPugh')">Learn more</span>
+          <div class="learn-content" id="learnPugh">
+            <h4>How it works</h4>
+            <ul>
+              <li>Choose one alternative as the baseline.</li>
+              <li>For every other alternative, compare each criterion: better (+), same (S), or worse (&minus;) vs. baseline.</li>
+              <li>Count the total +, S, and &minus; marks. More + and fewer &minus; is better.</li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>Easy to understand and doesn't require precise scoring. However, it doesn't account for the magnitude of differences or weights directly in the comparison.</p>
+          </div>
+        </div>
+
+        <div class="method-card" data-method="qfd" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-moderate">Moderate</span>
+          <h3>QFD-like</h3>
+          <p>Score with 0, 1, 3, 9 goodness scale. Weighted &amp; unweighted sums.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnQFD')">Learn more</span>
+          <div class="learn-content" id="learnQFD">
+            <h4>How it works</h4>
+            <ul>
+              <li>Rank criteria by system objectives and assign weights.</li>
+              <li>Rate each alternative on each criterion: 0 (no relation), 1 (weak), 3 (moderate), 9 (strong).</li>
+              <li>Calculate unweighted sum and weighted sum across all criteria.</li>
+              <li>Select the alternative with the highest scores.</li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>The 0-1-3-9 scale forces clear differentiation. Good for early concept screening. Scores are subjective and don't use the actual natural units of the criteria.</p>
+          </div>
+        </div>
+
+        <div class="method-card" data-method="mdm" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-moderate">Moderate</span>
+          <h3>Modified Decision Matrix</h3>
+          <p>Normalize scores to [0,1] and compute weighted sums.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnMDM')">Learn more</span>
+          <div class="learn-content" id="learnMDM">
+            <h4>How it works</h4>
+            <ul>
+              <li>Define min and max desirable values for each attribute.</li>
+              <li>Normalize each value to a 0–1 scale:<br>
+                &bull; If maximizing: (Value &minus; Min) / (Max &minus; Min)<br>
+                &bull; If minimizing: (Value &minus; Max) / (Min &minus; Max)</li>
+              <li>Multiply each normalized score by its weight and sum across criteria.</li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>Uses natural units and accounts for weights properly. Assumes a linear relationship between attribute value and desirability.</p>
+          </div>
+        </div>
+
+        <div class="method-card" data-method="mau" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-advanced">Advanced</span>
+          <h3>Multi-Attribute Utility (MAU)</h3>
+          <p>Define utility curves per attribute, interpolate values, weighted sum.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnMAU')">Learn more</span>
+          <div class="learn-content" id="learnMAU">
+            <h4>How it works</h4>
+            <ul>
+              <li>For each criterion, define a Single Attribute Utility (SAU) curve mapping raw values to a 0–1 utility scale.</li>
+              <li>Curves can be linear, polynomial, exponential, or S-shaped to capture non-linear preferences.</li>
+              <li>Look up the utility score for each alternative's attribute value on the curve.</li>
+              <li>Compute MAU = weighted sum of all SAU scores: U = &Sigma; k<sub>i</sub> &middot; U<sub>i</sub></li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>The most comprehensive method — captures nonlinear preferences and produces the most nuanced ranking. Requires more effort to define curves. Complexity increases in order: Lexicographic &rarr; Pugh &rarr; QFD &rarr; Modified DM &rarr; MAU.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToStep(1)">&larr; Back</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">Next: Configure &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="step3" class="step-content hidden">
+    <div class="card">
+      <h2>Configure Methods</h2>
+      <p class="subtitle">Provide additional inputs required by your selected methods</p>
+      <div id="configPanels"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back</button>
+        <button class="btn btn-success" onclick="runAnalysis()">Run Analysis &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div id="step4" class="step-content hidden">
+    <div id="resultsContainer"></div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="goToStep(2)">&larr; Back to Methods</button>
+      <button class="btn btn-primary" onclick="exportAllToExcel()">Export to Excel</button>
+      <button class="btn btn-success" onclick="showSaveModal()">Save This Analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save modal -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal">
+    <h3>Save Analysis</h3>
+    <label>Analysis Name</label>
+    <input type="text" id="modalSaveName" placeholder="e.g. Motor Selection v2" style="margin-bottom:1rem;">
+    <div class="btn-group" style="margin-top:0.5rem;">
+      <button class="btn btn-secondary" onclick="document.getElementById('saveModal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVersionFromModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let state = {
+  numAlts: 4,
+  numCrit: 4,
+  layout: 'alt-rows',
+  altNames: [],
+  critNames: [],
+  weights: [],
+  optDir: [],
+  values: [],
+  selectedMethods: new Set(),
+  pughBaseline: 0,
+  qfdScores: [],
+  mdmMin: [],
+  mdmMax: [],
+  mauCurves: [],
+  lastResults: null
+};
+
+// ========== VERSION MANAGEMENT ==========
+let savedVersions = JSON.parse(localStorage.getItem('tradeoff_versions') || '[]');
+let activeVersionId = null;
+
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function saveVersions() { localStorage.setItem('tradeoff_versions', JSON.stringify(savedVersions)); }
+
+function toggleDrawer() {
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const isOpen = drawer.classList.contains('open');
+  drawer.classList.toggle('open');
+  overlay.classList.toggle('open');
+  if (!isOpen) renderVersionList();
+}
+
+function saveVersionFromModal() {
+  const name = document.getElementById('modalSaveName').value.trim();
+  if (!name) { alert('Please enter a name.'); return; }
+  saveVersionWithName(name);
+  document.getElementById('saveModal').classList.remove('show');
+}
+
+function saveVersion() {
+  const name = document.getElementById('versionNameInput').value.trim();
+  if (!name) { alert('Please enter a name.'); return; }
+  saveVersionWithName(name);
+  document.getElementById('versionNameInput').value = '';
+}
+
+function showSaveModal() {
+  // Pre-fill with smart name: if we loaded a version, suggest next version
+  const input = document.getElementById('modalSaveName');
+  if (activeVersionId) {
+    const active = savedVersions.find(v => v.id === activeVersionId);
+    if (active) {
+      const baseName = active.baseName || active.name.replace(/\s+v\d+$/, '');
+      const siblings = savedVersions.filter(v => (v.baseName || v.name) === baseName || v.baseName === baseName);
+      const nextV = siblings.length + 1;
+      input.value = baseName + ' v' + nextV;
+    } else {
+      input.value = '';
+    }
+  } else {
+    input.value = '';
+  }
+  document.getElementById('saveModal').classList.add('show');
+  input.focus();
+  input.select();
+}
+
+function saveVersionWithName(name) {
+  syncAllInputs();
+
+  const baseName = name.replace(/\s+v\d+$/, '');
+  const siblings = savedVersions.filter(v => (v.baseName || '') === baseName);
+  const versionNum = siblings.length + 1;
+
+  const stateSnapshot = {};
+  for (const key of Object.keys(state)) {
+    if (key === 'lastResults') continue;
+    const val = state[key];
+    if (val instanceof Set) stateSnapshot[key] = [...val];
+    else if (Array.isArray(val)) stateSnapshot[key] = JSON.parse(JSON.stringify(val));
+    else stateSnapshot[key] = val;
+  }
+
+  const entry = {
+    id: generateId(),
+    name: name,
+    baseName: baseName,
+    version: versionNum,
+    timestamp: new Date().toISOString(),
+    state: stateSnapshot
+  };
+
+  savedVersions.push(entry);
+  saveVersions();
+  activeVersionId = entry.id;
+  renderVersionList();
+}
+
+function loadVersion(id) {
+  const entry = savedVersions.find(v => v.id === id);
+  if (!entry) return;
+
+  const s = entry.state;
+  state.numAlts = s.numAlts;
+  state.numCrit = s.numCrit;
+  state.layout = s.layout;
+  state.altNames = [...s.altNames];
+  state.critNames = [...s.critNames];
+  state.weights = [...s.weights];
+  state.optDir = [...s.optDir];
+  state.values = s.values.map(r => [...r]);
+  state.selectedMethods = new Set(s.selectedMethods || []);
+  state.pughBaseline = s.pughBaseline || 0;
+  state.qfdScores = (s.qfdScores || []).map(r => [...r]);
+  state.mdmMin = [...(s.mdmMin || [])];
+  state.mdmMax = [...(s.mdmMax || [])];
+  state.mauCurves = (s.mauCurves || []).map(c => ({...c}));
+
+  document.getElementById('numAlts').value = state.numAlts;
+  document.getElementById('numCrit').value = state.numCrit;
+  document.getElementById('layoutSelect').value = state.layout;
+  activeVersionId = id;
+
+  renderDataTable();
+  validateInputs();
+
+  // Re-select method cards
+  document.querySelectorAll('.method-card').forEach(el => {
+    el.classList.toggle('selected', state.selectedMethods.has(el.dataset.method));
+  });
+
+  // Close drawer and go to step 1
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+  goToStep(1);
+  renderVersionList();
+}
+
+function deleteVersion(id) {
+  // Find index and remove
+  const idx = savedVersions.findIndex(v => v.id === id);
+  if (idx === -1) return;
+  const name = savedVersions[idx].name;
+  savedVersions.splice(idx, 1);
+  saveVersions();
+  if (activeVersionId === id) activeVersionId = null;
+  renderVersionList();
+}
+
+function duplicateVersion(id) {
+  const entry = savedVersions.find(v => v.id === id);
+  if (!entry) return;
+  const copy = JSON.parse(JSON.stringify(entry));
+  copy.id = generateId();
+  copy.name = entry.name + ' (copy)';
+  copy.baseName = copy.name;
+  copy.timestamp = new Date().toISOString();
+  savedVersions.push(copy);
+  saveVersions();
+  renderVersionList();
+}
+
+function startRename(id, event) {
+  event.stopPropagation();
+  const entry = savedVersions.find(v => v.id === id);
+  if (!entry) return;
+  const nameEl = document.getElementById('vname-' + id);
+  if (!nameEl || nameEl.querySelector('input')) return; // already editing
+  const current = entry.name;
+  nameEl.outerHTML = `<input class="v-name-editing" id="vname-${id}" value="${esc(current)}"
+    onkeydown="if(event.key==='Enter'){event.preventDefault();commitRename('${id}');}if(event.key==='Escape')renderVersionList();"
+    onblur="commitRename('${id}')">`;
+  const inp = document.getElementById('vname-' + id);
+  inp.focus();
+  inp.select();
+}
+
+function commitRename(id) {
+  const inp = document.getElementById('vname-' + id);
+  if (!inp || inp.tagName !== 'INPUT') return;
+  const newName = inp.value.trim();
+  if (!newName) { renderVersionList(); return; }
+  const entry = savedVersions.find(v => v.id === id);
+  if (!entry) return;
+  entry.name = newName;
+  entry.baseName = newName.replace(/\s+v\d+$/, '');
+  saveVersions();
+  renderVersionList();
+}
+
+function renderVersionList() {
+  const list = document.getElementById('versionList');
+  if (savedVersions.length === 0) {
+    list.innerHTML = `<div class="v-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      No saved analyses yet.<br>Enter a name below and click Save.
+    </div>`;
+    return;
+  }
+
+  // Group by baseName
+  const groups = {};
+  savedVersions.forEach(v => {
+    const key = v.baseName || v.name;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(v);
+  });
+
+  let html = '';
+  for (const [base, versions] of Object.entries(groups)) {
+    versions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    versions.forEach((v, i) => {
+      const date = new Date(v.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const isActive = v.id === activeVersionId;
+      const vid = v.id;
+      const methods = (v.state.selectedMethods || []).length;
+      html += `<div class="version-item ${isActive ? 'active' : ''}">
+        <div class="v-top">
+          <div class="v-info">
+            <span class="v-name" id="vname-${vid}" onclick="startRename('${vid}', event)" title="Click to rename">${esc(v.name)}</span>
+          </div>
+          <div class="v-actions">
+            <button class="v-icon-btn load" onclick="event.stopPropagation();loadVersion('${vid}')" title="Load analysis">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="v-icon-btn export" onclick="event.stopPropagation();exportVersionToExcel('${vid}')" title="Export to Excel">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="v-icon-btn" onclick="event.stopPropagation();duplicateVersion('${vid}')" title="Duplicate">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+            <button class="v-icon-btn del" onclick="event.stopPropagation();deleteVersion('${vid}')" title="Delete">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="v-meta">${date} &middot; ${v.state.numAlts} alternatives, ${v.state.numCrit} criteria${methods ? ' &middot; '+methods+' method'+(methods>1?'s':'') : ''} &middot; v${i + 1}</div>
+      </div>`;
+    });
+  }
+  list.innerHTML = html;
+}
+
+// ========== VALIDATION ==========
+function validateInputs() {
+  const bar = document.getElementById('validationBar');
+  const errors = [];
+  const warnings = [];
+
+  // Weight sum
+  const wSum = state.weights.reduce((a, b) => a + b, 0);
+  const wSumRounded = Math.round(wSum * 1000) / 1000;
+  if (Math.abs(wSumRounded - 1.0) > 0.01) {
+    errors.push(`Weights sum to ${wSumRounded.toFixed(3)} — must equal 1.0`);
+  }
+
+  // Negative weights
+  if (state.weights.some(w => w < 0)) errors.push('Weights cannot be negative.');
+
+  // Duplicate alt names
+  const altSet = new Set();
+  state.altNames.forEach(n => {
+    if (altSet.has(n.toLowerCase().trim())) warnings.push(`Duplicate alternative name: "${n}"`);
+    altSet.add(n.toLowerCase().trim());
+  });
+
+  // Duplicate criterion names
+  const critSet = new Set();
+  state.critNames.forEach(n => {
+    if (critSet.has(n.toLowerCase().trim())) warnings.push(`Duplicate criterion name: "${n}"`);
+    critSet.add(n.toLowerCase().trim());
+  });
+
+  // Empty names
+  if (state.altNames.some(n => !n.trim())) warnings.push('Some alternative names are empty.');
+  if (state.critNames.some(n => !n.trim())) warnings.push('Some criterion names are empty.');
+
+  // All same values in a criterion (no differentiation)
+  for (let c = 0; c < state.numCrit; c++) {
+    const vals = state.values.map(r => r[c]);
+    if (vals.every(v => v === vals[0])) {
+      warnings.push(`All alternatives have the same value for "${state.critNames[c]}" — this criterion won't differentiate.`);
+    }
+  }
+
+  if (errors.length > 0) {
+    bar.className = 'validation-bar error';
+    bar.innerHTML = '&#9888; ' + errors.join(' | ');
+    return false;
+  } else if (warnings.length > 0) {
+    bar.className = 'validation-bar warning';
+    bar.innerHTML = '&#9888; ' + warnings.join(' | ') + ` <span class="weight-indicator" style="background:#d4edda;color:#155724;">Weights: ${wSumRounded.toFixed(3)}</span>`;
+    return true;
+  } else {
+    bar.className = 'validation-bar ok';
+    bar.innerHTML = `&#10003; All inputs valid. <span class="weight-indicator" style="background:#d4edda;color:#155724;">Weights: ${wSumRounded.toFixed(3)}</span>`;
+    return true;
+  }
+}
+
+function autoNormalizeWeights() {
+  syncAllInputs();
+  const sum = state.weights.reduce((a, b) => a + b, 0);
+  if (sum === 0) { alert('All weights are zero. Set at least one weight before normalizing.'); return; }
+  state.weights = state.weights.map(w => Math.round((w / sum) * 1000) / 1000);
+  // Fix rounding to ensure sum=1
+  const diff = 1 - state.weights.reduce((a, b) => a + b, 0);
+  state.weights[0] = Math.round((state.weights[0] + diff) * 1000) / 1000;
+  renderDataTable();
+  validateInputs();
+}
+
+// ========== TABLE ==========
+function init() { rebuildTable(); renderVersionList(); }
+
+function updateLayout() {
+  state.layout = document.getElementById('layoutSelect').value;
+  rebuildTable();
+}
+
+function rebuildTable() {
+  state.numAlts = parseInt(document.getElementById('numAlts').value) || 4;
+  state.numCrit = parseInt(document.getElementById('numCrit').value) || 4;
+  while (state.altNames.length < state.numAlts) state.altNames.push('Alt ' + (state.altNames.length + 1));
+  while (state.critNames.length < state.numCrit) state.critNames.push('Criterion ' + (state.critNames.length + 1));
+  while (state.weights.length < state.numCrit) state.weights.push(+(1 / state.numCrit).toFixed(2));
+  while (state.optDir.length < state.numCrit) state.optDir.push('max');
+  while (state.values.length < state.numAlts) state.values.push([]);
+  state.values.forEach(row => { while (row.length < state.numCrit) row.push(0); });
+  state.altNames.length = state.numAlts;
+  state.critNames.length = state.numCrit;
+  state.weights.length = state.numCrit;
+  state.optDir.length = state.numCrit;
+  state.values.length = state.numAlts;
+  state.values.forEach(row => row.length = state.numCrit);
+  renderDataTable();
+  validateInputs();
+}
+
+function renderDataTable() {
+  const table = document.getElementById('dataTable');
+  const nA = state.numAlts, nC = state.numCrit;
+
+  if (state.layout === 'alt-rows') {
+    let html = '<tr><th></th>';
+    for (let c = 0; c < nC; c++) {
+      html += `<th><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="color:white;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:4px;text-align:center;"></th>`;
+    }
+    html += '</tr>';
+    html += '<tr style="background:#e8f4fd;"><td style="font-weight:600;font-size:0.78rem;">Weight</td>';
+    for (let c = 0; c < nC; c++) {
+      html += `<td><input type="number" step="0.01" min="0" max="1" value="${state.weights[c]}" oninput="state.weights[${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+    }
+    html += '</tr>';
+    html += '<tr style="background:#fef9e7;"><td style="font-weight:600;font-size:0.78rem;">Goal</td>';
+    for (let c = 0; c < nC; c++) {
+      html += `<td><select onchange="state.optDir[${c}]=this.value" style="font-size:0.78rem;">
+        <option value="max" ${state.optDir[c]==='max'?'selected':''}>Maximize</option>
+        <option value="min" ${state.optDir[c]==='min'?'selected':''}>Minimize</option>
+      </select></td>`;
+    }
+    html += '</tr>';
+    for (let a = 0; a < nA; a++) {
+      html += `<tr><td><input value="${esc(state.altNames[a])}" oninput="state.altNames[${a}]=this.value;validateInputs()" style="font-weight:600;text-align:left;"></td>`;
+      for (let c = 0; c < nC; c++) {
+        html += `<td><input type="number" step="any" value="${state.values[a][c]}" oninput="state.values[${a}][${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+      }
+      html += '</tr>';
+    }
+    table.innerHTML = html;
+  } else {
+    let html = '<tr><th></th>';
+    for (let a = 0; a < nA; a++) {
+      html += `<th><input value="${esc(state.altNames[a])}" oninput="state.altNames[${a}]=this.value;validateInputs()" style="color:white;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:4px;text-align:center;"></th>`;
+    }
+    html += '<th style="font-size:0.72rem;">Weight</th><th style="font-size:0.72rem;">Goal</th></tr>';
+    for (let c = 0; c < nC; c++) {
+      html += `<tr><td><input value="${esc(state.critNames[c])}" oninput="state.critNames[${c}]=this.value;validateInputs()" style="font-weight:600;text-align:left;"></td>`;
+      for (let a = 0; a < nA; a++) {
+        html += `<td><input type="number" step="any" value="${state.values[a][c]}" oninput="state.values[${a}][${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+      }
+      html += `<td><input type="number" step="0.01" min="0" max="1" value="${state.weights[c]}" oninput="state.weights[${c}]=parseFloat(this.value)||0;validateInputs()"></td>`;
+      html += `<td><select onchange="state.optDir[${c}]=this.value" style="font-size:0.78rem;">
+        <option value="max" ${state.optDir[c]==='max'?'selected':''}>Max</option>
+        <option value="min" ${state.optDir[c]==='min'?'selected':''}>Min</option>
+      </select></td></tr>`;
+    }
+    table.innerHTML = html;
+  }
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ========== NAVIGATION ==========
+function syncAllInputs() { /* state is synced live via oninput handlers */ }
+
+function goToStep(n) {
+  if (n === 2) {
+    syncAllInputs();
+    const wSum = state.weights.reduce((a, b) => a + b, 0);
+    if (Math.abs(wSum - 1.0) > 0.02) {
+      if (!confirm(`Weights sum to ${wSum.toFixed(3)}, not 1.0. Would you like to auto-normalize them?\n\nClick OK to normalize, or Cancel to go back and fix manually.`)) return;
+      autoNormalizeWeights();
+    }
+    if (!validateInputs()) { /* warnings are okay to proceed */ }
+  }
+  if (n === 3) {
+    syncAllInputs();
+    if (state.selectedMethods.size === 0) { alert('Please select at least one method.'); return; }
+    buildConfigPanels();
+  }
+  if (n === 4) return;
+
+  document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('step' + n).classList.remove('hidden');
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'completed');
+    if (s < n) el.classList.add('completed');
+    if (s === n) el.classList.add('active');
+  });
+  document.querySelectorAll('.step-connector').forEach((el, i) => {
+    el.classList.toggle('completed', i < n - 1);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleMethod(el) {
+  const m = el.dataset.method;
+  if (state.selectedMethods.has(m)) { state.selectedMethods.delete(m); el.classList.remove('selected'); }
+  else { state.selectedMethods.add(m); el.classList.add('selected'); }
+}
+
+function toggleLearn(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ========== CONFIG PANELS ==========
+function buildConfigPanels() {
+  const container = document.getElementById('configPanels');
+  let html = '';
+
+  if (state.selectedMethods.has('pugh')) {
+    html += `<div class="config-panel">
+      <h3>Pugh Method</h3>
+      <div class="info-box">Select the baseline alternative. All others will be compared against it.</div>
+      <div class="field" style="max-width:300px;">
+        <label>Baseline Alternative</label>
+        <select id="pughBaseline" onchange="state.pughBaseline=parseInt(this.value)">
+          ${state.altNames.map((n, i) => `<option value="${i}" ${i===state.pughBaseline?'selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }
+
+  if (state.selectedMethods.has('qfd')) {
+    state.qfdScores = state.values.map(row => row.map(() => 3));
+    html += `<div class="config-panel">
+      <h3>QFD-like Method</h3>
+      <div class="info-box">Rate each alternative on each criterion: <strong>0</strong> (none), <strong>1</strong> (weak), <strong>3</strong> (moderate), <strong>9</strong> (strong).</div>
+      <div style="overflow-x:auto;"><table id="qfdTable"></table></div>
+    </div>`;
+  }
+
+  if (state.selectedMethods.has('mdm')) {
+    state.mdmMin = []; state.mdmMax = [];
+    for (let c = 0; c < state.numCrit; c++) {
+      const vals = state.values.map(r => r[c]);
+      state.mdmMin.push(0);
+      state.mdmMax.push(Math.ceil(Math.max(...vals) * 1.2) || 100);
+    }
+    html += `<div class="config-panel">
+      <h3>Modified Decision Matrix</h3>
+      <div class="info-box">Define the min and max desirable range for each attribute. Values outside this range will be clamped to 0 or 1.</div>
+      <div style="overflow-x:auto;"><table id="mdmRangeTable"></table></div>
+    </div>`;
+  }
+
+  if (state.selectedMethods.has('mau')) {
+    state.mauCurves = state.critNames.map(() => ({ type: 'linear', degree: 2, expRate: 2, steepness: 5 }));
+    html += `<div class="config-panel">
+      <h3>Multi-Attribute Utility (MAU)</h3>
+      <div class="info-box">Select the SAU curve shape for each criterion. The tool auto-generates the curve and interpolates utility values.</div>
+      <div id="mauConfig"></div>
+    </div>`;
+  }
+
+  if (!state.selectedMethods.has('pugh') && !state.selectedMethods.has('qfd') &&
+      !state.selectedMethods.has('mdm') && !state.selectedMethods.has('mau')) {
+    html += `<div class="info-box">No additional configuration needed. Click "Run Analysis" to see results.</div>`;
+  }
+
+  container.innerHTML = html;
+  if (state.selectedMethods.has('qfd')) buildQFDTable();
+  if (state.selectedMethods.has('mdm')) buildMDMTable();
+  if (state.selectedMethods.has('mau')) buildMAUConfig();
+}
+
+function buildQFDTable() {
+  const table = document.getElementById('qfdTable');
+  let html = '<tr><th>Criterion \\ Alternative</th>';
+  state.altNames.forEach(n => html += `<th>${esc(n)}</th>`);
+  html += '</tr>';
+  for (let c = 0; c < state.numCrit; c++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.critNames[c])} (w=${state.weights[c]})</td>`;
+    for (let a = 0; a < state.numAlts; a++) {
+      html += `<td><select onchange="state.qfdScores[${a}][${c}]=parseInt(this.value)" style="font-size:0.82rem;">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="3" selected>3</option><option value="9">9</option>
+      </select></td>`;
+    }
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+}
+
+function buildMDMTable() {
+  const table = document.getElementById('mdmRangeTable');
+  let html = '<tr><th>Attribute</th><th>Min Desirable</th><th>Max Desirable</th><th>Goal</th><th>Data Range</th></tr>';
+  for (let c = 0; c < state.numCrit; c++) {
+    const vals = state.values.map(r => r[c]);
+    const dataMin = Math.min(...vals), dataMax = Math.max(...vals);
+    html += `<tr>
+      <td style="font-weight:600;text-align:left;">${esc(state.critNames[c])}</td>
+      <td><input type="number" step="any" value="${state.mdmMin[c]}" onchange="state.mdmMin[${c}]=parseFloat(this.value)||0"></td>
+      <td><input type="number" step="any" value="${state.mdmMax[c]}" onchange="state.mdmMax[${c}]=parseFloat(this.value)||0"></td>
+      <td>${state.optDir[c]==='max'?'Maximize':'Minimize'}</td>
+      <td style="font-size:0.75rem;color:var(--text-light);">${dataMin} – ${dataMax}</td>
+    </tr>`;
+  }
+  table.innerHTML = html;
+}
+
+function buildMAUConfig() {
+  const container = document.getElementById('mauConfig');
+  let html = '';
+  for (let c = 0; c < state.numCrit; c++) {
+    const vals = state.values.map(r => r[c]);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    html += `<div class="sau-config-row">
+      <div class="sau-controls">
+        <div class="field" style="min-width:140px;">
+          <label><strong>${esc(state.critNames[c])}</strong></label>
+          <span style="font-size:0.72rem;color:var(--text-light);">Range: ${minV}–${maxV} (${state.optDir[c]})</span>
+        </div>
+        <div class="field" style="min-width:140px;">
+          <label>Curve Type</label>
+          <select id="mauType${c}" onchange="updateMAUCurve(${c})">
+            <option value="linear">Linear</option>
+            <option value="polynomial">Polynomial</option>
+            <option value="exponential">Exponential</option>
+            <option value="scurve">S-Curve (Sigmoid)</option>
+          </select>
+        </div>
+        <div class="field" id="mauParamField${c}" style="min-width:100px;">
+          <label>Parameters</label>
+          <span style="font-size:0.78rem;color:var(--text-light);">None needed</span>
+        </div>
+      </div>
+      <div class="sau-preview-wrap">
+        <canvas id="sauPreview${c}" width="440" height="340"></canvas>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  for (let c = 0; c < state.numCrit; c++) drawSAUPreview(c);
+}
+
+function drawSAUPreview(c) {
+  const canvas = document.getElementById('sauPreview' + c);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const vals = state.values.map(r => r[c]);
+  const dataMin = Math.min(...vals), dataMax = Math.max(...vals);
+  const range = dataMax - dataMin || 1;
+  const isMax = state.optDir[c] === 'max';
+  const curve = state.mauCurves[c];
+
+  // Layout
+  const pad = { left: 48, right: 30, top: 28, bottom: 42 };
+  const gW = W - pad.left - pad.right;
+  const gH = H - pad.top - pad.bottom;
+
+  // Extended range for excluded/excess zones
+  const extLow = dataMin - range * 0.3;
+  const extHigh = dataMax + range * 0.3;
+  const extRange = extHigh - extLow;
+  const toX = v => pad.left + ((v - extLow) / extRange) * gW;
+  const toY = u => pad.top + gH - u * gH;
+
+  // --- Excluded zone (left) ---
+  ctx.fillStyle = 'rgba(180,200,220,0.18)';
+  ctx.fillRect(pad.left, pad.top, toX(dataMin) - pad.left, gH);
+  // --- Excess zone (right) ---
+  ctx.fillRect(toX(dataMax), pad.top, pad.left + gW - toX(dataMax), gH);
+  // --- Acceptance range (yellow) ---
+  ctx.fillStyle = 'rgba(243,196,49,0.28)';
+  ctx.fillRect(toX(dataMin), pad.top, toX(dataMax) - toX(dataMin), gH);
+  // Yellow border
+  ctx.strokeStyle = 'rgba(210,170,30,0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.strokeRect(toX(dataMin), pad.top, toX(dataMax) - toX(dataMin), gH);
+  ctx.setLineDash([]);
+
+  // --- Axes ---
+  ctx.strokeStyle = '#2c3e50';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + gH);
+  ctx.lineTo(pad.left + gW, pad.top + gH);
+  ctx.stroke();
+
+  // --- Grid lines ---
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 0.5;
+  for (let u = 0.25; u < 1; u += 0.25) {
+    ctx.beginPath(); ctx.moveTo(pad.left, toY(u)); ctx.lineTo(pad.left + gW, toY(u)); ctx.stroke();
+  }
+
+  // --- SAU function ---
+  function sauVal(x) {
+    let t = (x - dataMin) / range;
+    t = Math.max(0, Math.min(1, t));
+    if (!isMax) t = 1 - t;
+    switch (curve.type) {
+      case 'linear': return t;
+      case 'polynomial': return Math.pow(t, curve.degree || 2);
+      case 'exponential': { const r = curve.expRate || 2; return (Math.exp(r*t)-1)/(Math.exp(r)-1); }
+      case 'scurve': { const k = curve.steepness || 5; const f = v => 1/(1+Math.exp(-k*(v-0.5))); return (f(t)-f(0))/(f(1)-f(0)); }
+      default: return t;
+    }
+  }
+
+  // --- Draw curve ---
+  ctx.strokeStyle = '#2980b9';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  const steps = 120;
+  // Flat at 0 in excluded zone
+  ctx.moveTo(toX(extLow), toY(0));
+  ctx.lineTo(toX(dataMin), toY(0));
+  // Curve in acceptance range
+  for (let i = 0; i <= steps; i++) {
+    const x = dataMin + (i / steps) * range;
+    const u = sauVal(x);
+    const px = toX(x), py = toY(u);
+    if (i === 0) ctx.lineTo(px, py); else ctx.lineTo(px, py);
+  }
+  // Flat at 1 in excess zone
+  ctx.lineTo(toX(extHigh), toY(1));
+  ctx.stroke();
+
+  // --- Labels ---
+  ctx.font = '600 18px system-ui, sans-serif';
+  ctx.fillStyle = '#2c3e50';
+  ctx.textAlign = 'center';
+  // Y-axis: "Utility"
+  ctx.save();
+  ctx.translate(14, pad.top + gH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Utility', 0, 0);
+  ctx.restore();
+  // X-axis: "Attribute Value"
+  ctx.fillText('Attribute Value', pad.left + gW / 2, H - 4);
+
+  // Y tick labels
+  ctx.font = '11px system-ui';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#555';
+  ctx.fillText('0', pad.left - 5, toY(0) + 4);
+  ctx.fillText('1', pad.left - 5, toY(1) + 4);
+  ctx.fillText('0.5', pad.left - 5, toY(0.5) + 4);
+
+  // X tick labels
+  ctx.textAlign = 'center';
+  ctx.fillText(dataMin.toFixed(1), toX(dataMin), pad.top + gH + 16);
+  ctx.fillText(dataMax.toFixed(1), toX(dataMax), pad.top + gH + 16);
+
+  // --- Zone labels ---
+  ctx.font = '10px system-ui';
+  ctx.fillStyle = 'rgba(80,80,120,0.6)';
+  const exclMid = (pad.left + toX(dataMin)) / 2;
+  if (toX(dataMin) - pad.left > 36) {
+    ctx.textAlign = 'center';
+    ctx.fillText('Excluded', exclMid, pad.top + 14);
+  }
+  const excessMid = (toX(dataMax) + pad.left + gW) / 2;
+  if (pad.left + gW - toX(dataMax) > 36) {
+    ctx.textAlign = 'center';
+    ctx.fillText('Excess', excessMid, pad.top + 14);
+    ctx.fillText('(U=1)', excessMid, pad.top + 26);
+  }
+  const accMid = (toX(dataMin) + toX(dataMax)) / 2;
+  ctx.fillStyle = 'rgba(160,130,20,0.7)';
+  ctx.font = 'italic 11px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('Acceptance Range', accMid, pad.top + gH - 6);
+
+  // --- Curve type label ---
+  ctx.font = '600 11px system-ui';
+  ctx.fillStyle = '#2980b9';
+  const lbl = curve.type === 'scurve' ? 'S-Curve' : curve.type.charAt(0).toUpperCase() + curve.type.slice(1);
+  ctx.fillText(lbl, accMid, pad.top + 14);
+}
+
+function updateMAUCurve(c) {
+  const type = document.getElementById('mauType' + c).value;
+  state.mauCurves[c].type = type;
+  const f = document.getElementById('mauParamField' + c);
+  if (type === 'polynomial') {
+    f.innerHTML = `<label>Degree</label><input type="number" min="2" max="10" value="${state.mauCurves[c].degree||2}" oninput="state.mauCurves[${c}].degree=parseInt(this.value)||2;drawSAUPreview(${c})" style="width:80px;">`;
+  } else if (type === 'exponential') {
+    f.innerHTML = `<label>Rate</label><input type="number" step="0.1" min="0.1" max="10" value="${state.mauCurves[c].expRate||2}" oninput="state.mauCurves[${c}].expRate=parseFloat(this.value)||2;drawSAUPreview(${c})" style="width:80px;">`;
+  } else if (type === 'scurve') {
+    f.innerHTML = `<label>Steepness</label><input type="number" step="0.5" min="0.5" max="20" value="${state.mauCurves[c].steepness||5}" oninput="state.mauCurves[${c}].steepness=parseFloat(this.value)||5;drawSAUPreview(${c})" style="width:80px;">`;
+  } else {
+    f.innerHTML = `<label>Parameters</label><span style="font-size:0.78rem;color:var(--text-light);">None needed</span>`;
+  }
+  drawSAUPreview(c);
+}
+
+// ========== ANALYSIS ENGINE ==========
+function runAnalysis() {
+  syncAllInputs();
+
+  // Final validation
+  const wSum = state.weights.reduce((a, b) => a + b, 0);
+  if (Math.abs(wSum - 1.0) > 0.02) {
+    alert(`Cannot run analysis: weights sum to ${wSum.toFixed(3)}, not 1.0.\n\nGo back and fix the weights or use "Auto-Normalize Weights".`);
+    return;
+  }
+
+  const results = {};
+  if (state.selectedMethods.has('lexicographic')) results.lexicographic = calcLexicographic();
+  if (state.selectedMethods.has('pugh')) results.pugh = calcPugh();
+  if (state.selectedMethods.has('qfd')) results.qfd = calcQFD();
+  if (state.selectedMethods.has('mdm')) results.mdm = calcMDM();
+  if (state.selectedMethods.has('mau')) results.mau = calcMAU();
+
+  state.lastResults = results;
+  renderResults(results);
+
+  document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('step4').classList.remove('hidden');
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'completed');
+    if (s < 4) el.classList.add('completed');
+    if (s === 4) el.classList.add('active');
+  });
+  document.querySelectorAll('.step-connector').forEach(el => el.classList.add('completed'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function calcLexicographic() {
+  const critOrder = state.weights.map((w, i) => ({ w, i })).sort((a, b) => b.w - a.w);
+  const topCrit = critOrder[0].i;
+  const isMin = state.optDir[topCrit] === 'min';
+  const scores = state.values.map((row, a) => ({ alt: a, val: row[topCrit] }));
+  scores.sort((a, b) => isMin ? a.val - b.val : b.val - a.val);
+  const ranks = new Array(state.numAlts);
+  scores.forEach((s, i) => ranks[s.alt] = i + 1);
+  return { critOrder, topCrit, ranks, scores };
+}
+
+function calcPugh() {
+  const base = state.pughBaseline;
+  const matrix = [];
+  const sums = { plus: [], minus: [], same: [] };
+  for (let a = 0; a < state.numAlts; a++) {
+    matrix[a] = [];
+    let p = 0, m = 0, s = 0;
+    for (let c = 0; c < state.numCrit; c++) {
+      const bv = state.values[base][c], av = state.values[a][c];
+      const isMax = state.optDir[c] === 'max';
+      if (a === base) { matrix[a][c] = 'S'; s++; }
+      else if ((isMax && av > bv) || (!isMax && av < bv)) { matrix[a][c] = '+'; p++; }
+      else if (av === bv) { matrix[a][c] = 'S'; s++; }
+      else { matrix[a][c] = '-'; m++; }
+    }
+    sums.plus[a] = p; sums.minus[a] = m; sums.same[a] = s;
+  }
+  const netScores = state.altNames.map((_, a) => ({ alt: a, net: sums.plus[a] - sums.minus[a], plus: sums.plus[a] }));
+  netScores.sort((a, b) => b.net - a.net || b.plus - a.plus);
+  const ranks = new Array(state.numAlts);
+  let rank = 1;
+  for (let i = 0; i < netScores.length; i++) {
+    if (i > 0 && (netScores[i].net !== netScores[i-1].net || netScores[i].plus !== netScores[i-1].plus)) rank = i + 1;
+    ranks[netScores[i].alt] = rank;
+  }
+  return { matrix, sums, ranks, baseline: base };
+}
+
+function calcQFD() {
+  const sums = [], wtSums = [];
+  for (let a = 0; a < state.numAlts; a++) {
+    let s = 0, ws = 0;
+    for (let c = 0; c < state.numCrit; c++) {
+      const v = state.qfdScores[a][c]; s += v; ws += v * state.weights[c];
+    }
+    sums.push(s); wtSums.push(+ws.toFixed(3));
+  }
+  const sorted = wtSums.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
+  const ranks = new Array(state.numAlts);
+  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  return { sums, wtSums, ranks };
+}
+
+function calcMDM() {
+  const normalized = [];
+  for (let a = 0; a < state.numAlts; a++) {
+    normalized[a] = [];
+    for (let c = 0; c < state.numCrit; c++) {
+      const v = state.values[a][c], mn = state.mdmMin[c], mx = state.mdmMax[c];
+      if (mx === mn) { normalized[a][c] = 0.5; continue; }
+      let n;
+      if (state.optDir[c] === 'max') n = (v - mn) / (mx - mn);
+      else n = (v - mx) / (mn - mx);
+      normalized[a][c] = +Math.max(0, Math.min(1, n)).toFixed(4);
+    }
+  }
+  const scores = [];
+  for (let a = 0; a < state.numAlts; a++) {
+    let s = 0;
+    for (let c = 0; c < state.numCrit; c++) s += normalized[a][c] * state.weights[c];
+    scores.push(+s.toFixed(4));
+  }
+  const sorted = scores.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
+  const ranks = new Array(state.numAlts);
+  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  return { normalized, scores, ranks };
+}
+
+function calcMAU() {
+  const sauFunctions = [];
+  for (let c = 0; c < state.numCrit; c++) {
+    const vals = state.values.map(r => r[c]);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const range = maxV - minV || 1;
+    const isMax = state.optDir[c] === 'max';
+    const curve = state.mauCurves[c];
+    sauFunctions.push((x) => {
+      let t = (x - minV) / range;
+      t = Math.max(0, Math.min(1, t));
+      if (!isMax) t = 1 - t;
+      let u;
+      switch (curve.type) {
+        case 'linear': u = t; break;
+        case 'polynomial': u = Math.pow(t, curve.degree || 2); break;
+        case 'exponential': { const r = curve.expRate || 2; u = (Math.exp(r*t)-1)/(Math.exp(r)-1); break; }
+        case 'scurve': {
+          const k = curve.steepness || 5;
+          const f = v => 1/(1+Math.exp(-k*(v-0.5)));
+          u = (f(t)-f(0))/(f(1)-f(0)); break;
+        }
+        default: u = t;
+      }
+      return +u.toFixed(4);
+    });
+  }
+  const utilities = [];
+  for (let a = 0; a < state.numAlts; a++) {
+    utilities[a] = [];
+    for (let c = 0; c < state.numCrit; c++) utilities[a][c] = sauFunctions[c](state.values[a][c]);
+  }
+  const scores = [];
+  for (let a = 0; a < state.numAlts; a++) {
+    let s = 0;
+    for (let c = 0; c < state.numCrit; c++) s += utilities[a][c] * state.weights[c];
+    scores.push(+s.toFixed(4));
+  }
+  const sorted = scores.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
+  const ranks = new Array(state.numAlts);
+  sorted.forEach((s, i) => ranks[s.alt] = i + 1);
+  return { utilities, scores, ranks, sauFunctions };
+}
+
+// ========== RENDER RESULTS ==========
+const methodNames = { lexicographic:'Lexicographic', pugh:'Pugh', qfd:'QFD-like', mdm:'Modified Decision Matrix', mau:'Multi-Attribute Utility (MAU)' };
+
+function renderResults(results) {
+  const container = document.getElementById('resultsContainer');
+  let html = '';
+
+  for (const [method, data] of Object.entries(results)) {
+    html += `<div class="card results-section"><h3>${methodNames[method]} Results</h3>`;
+    if (method === 'lexicographic') html += renderLexResults(data);
+    else if (method === 'pugh') html += renderPughResults(data);
+    else if (method === 'qfd') html += renderQFDResults(data);
+    else if (method === 'mdm') html += renderMDMResults(data);
+    else if (method === 'mau') html += renderMAUResults(data);
+
+    html += '<div style="margin-top:0.75rem;"><strong>Ranking:</strong></div>';
+    html += '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.4rem;">';
+    const sorted = data.ranks.map((r, a) => ({ alt: a, rank: r })).sort((a, b) => a.rank - b.rank);
+    sorted.forEach(s => {
+      const cls = s.rank===1?'rank-1':s.rank===2?'rank-2':s.rank===3?'rank-3':'rank-other';
+      html += `<div style="display:flex;align-items:center;gap:0.3rem;"><span class="ranking-badge ${cls}">${s.rank}</span><span style="font-size:0.85rem;">${esc(state.altNames[s.alt])}</span></div>`;
+    });
+    html += '</div></div>';
+  }
+
+  // Comparison
+  if (Object.keys(results).length > 1) {
+    html += `<div class="card results-section"><h3>Side-by-Side Ranking Comparison</h3>`;
+    html += '<div style="overflow-x:auto;"><table class="comparison-table"><tr><th>Alternative</th>';
+    for (const m of Object.keys(results)) html += `<th>${methodNames[m]}</th>`;
+    html += '<th>Avg Rank</th></tr>';
+    for (let a = 0; a < state.numAlts; a++) {
+      html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+      let sum = 0, count = 0;
+      for (const data of Object.values(results)) { const r = data.ranks[a]; sum += r; count++; html += `<td class="${r===1?'best-rank':''}">${r}</td>`; }
+      html += `<td class="score-cell">${(sum/count).toFixed(1)}</td></tr>`;
+    }
+    html += '</table></div>';
+    const avgRanks = state.altNames.map((_, a) => {
+      let s = 0, c = 0;
+      for (const d of Object.values(results)) { s += d.ranks[a]; c++; }
+      return { alt: a, avg: s/c };
+    }).sort((a, b) => a.avg - b.avg);
+    html += `<div style="margin-top:0.75rem;padding:0.75rem;background:#d4edda;border-radius:8px;font-size:0.88rem;">
+      <strong>Overall Best (by average rank):</strong> ${esc(state.altNames[avgRanks[0].alt])} (avg rank: ${avgRanks[0].avg.toFixed(1)})
+    </div></div>`;
+  }
+
+  if (results.mau) {
+    html += `<div class="card results-section"><h3>SAU Curves</h3>
+      <p class="subtitle">Utility curves for each criterion in the MAU method</p>
+      <div class="chart-grid" id="chartGrid"></div></div>`;
+  }
+
+  container.innerHTML = html;
+  if (results.mau) setTimeout(() => renderSAUCharts(results.mau), 100);
+}
+
+function renderLexResults(data) {
+  const tc = data.topCrit;
+  let html = `<div class="info-box">Deciding criterion (highest weight): <strong>${esc(state.critNames[tc])}</strong> (w=${state.weights[tc]}, ${state.optDir[tc]})</div>`;
+  html += '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
+  data.critOrder.forEach(co => html += `<th>${state.weights[co.i]}</th>`);
+  html += '<th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
+  data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:#fff3cd;font-weight:600;':''}">${esc(state.critNames[co.i])} (${state.optDir[co.i]})</td>`);
+  html += '<td></td></tr>';
+  for (let a = 0; a < state.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+    data.critOrder.forEach((co, i) => html += `<td style="${i===0?'background:#fff3cd;':''}">${state.values[a][co.i]}</td>`);
+    html += `<td class="rank-cell">${data.ranks[a]}</td></tr>`;
+  }
+  html += '</table></div>';
+  return html;
+}
+
+function renderPughResults(data) {
+  let html = `<div class="info-box">Baseline: <strong>${esc(state.altNames[data.baseline])}</strong></div>`;
+  html += '<div style="overflow-x:auto;"><table><tr><th>Criterion</th>';
+  state.altNames.forEach((n, a) => html += `<th>${esc(n)}${a===data.baseline?' (base)':''}</th>`);
+  html += '</tr>';
+  for (let c = 0; c < state.numCrit; c++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.critNames[c])}</td>`;
+    for (let a = 0; a < state.numAlts; a++) {
+      const v = data.matrix[a][c];
+      const color = v==='+'?'#27ae60':v==='-'?'#e74c3c':'#7f8c8d';
+      html += `<td style="color:${color};font-weight:600;">${v}</td>`;
+    }
+    html += '</tr>';
+  }
+  ['same','plus','minus'].forEach((k, i) => {
+    const label = ['&Sigma; S','&Sigma; +','&Sigma; &minus;'][i];
+    html += `<tr style="background:#d4edda;"><td style="font-weight:600;">${label}</td>`;
+    for (let a = 0; a < state.numAlts; a++) html += `<td>${data.sums[k][a]}</td>`;
+    html += '</tr>';
+  });
+  html += '<tr><td style="font-weight:600;">Rank</td>';
+  for (let a = 0; a < state.numAlts; a++) html += `<td class="rank-cell">${data.ranks[a]}</td>`;
+  html += '</tr></table></div>';
+  return html;
+}
+
+function renderQFDResults(data) {
+  let html = '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
+  state.weights.forEach(w => html += `<th>${w}</th>`);
+  html += '<th>Sum</th><th>Wt Sum</th><th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
+  state.critNames.forEach(n => html += `<td>${esc(n)}</td>`);
+  html += '<td></td><td></td><td></td></tr>';
+  for (let a = 0; a < state.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+    for (let c = 0; c < state.numCrit; c++) html += `<td>${state.qfdScores[a][c]}</td>`;
+    html += `<td>${data.sums[a]}</td><td class="score-cell">${data.wtSums[a]}</td><td class="rank-cell">${data.ranks[a]}</td></tr>`;
+  }
+  html += '</table></div>';
+  return html;
+}
+
+function renderMDMResults(data) {
+  let html = '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
+  state.weights.forEach(w => html += `<th>${w}</th>`);
+  html += '<th>Score</th><th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
+  state.critNames.forEach((n, c) => html += `<td>${esc(n)} (${state.optDir[c]})</td>`);
+  html += '<td></td><td></td></tr>';
+  for (let a = 0; a < state.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+    for (let c = 0; c < state.numCrit; c++) html += `<td>${data.normalized[a][c].toFixed(3)}</td>`;
+    html += `<td class="score-cell">${data.scores[a]}</td><td class="rank-cell">${data.ranks[a]}</td></tr>`;
+  }
+  html += '</table></div>';
+  return html;
+}
+
+function renderMAUResults(data) {
+  let html = '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
+  state.weights.forEach(w => html += `<th>${w}</th>`);
+  html += '<th>Score</th><th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
+  state.critNames.forEach(n => html += `<td>${esc(n)}</td>`);
+  html += '<td></td><td></td></tr>';
+  for (let a = 0; a < state.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+    for (let c = 0; c < state.numCrit; c++) html += `<td>${data.utilities[a][c].toFixed(3)}</td>`;
+    html += `<td class="score-cell">${data.scores[a]}</td><td class="rank-cell">${data.ranks[a]}</td></tr>`;
+  }
+  html += '</table></div>';
+  return html;
+}
+
+function renderSAUCharts(mauData) {
+  const grid = document.getElementById('chartGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let c = 0; c < state.numCrit; c++) {
+    const div = document.createElement('div');
+    div.className = 'chart-container';
+    const canvas = document.createElement('canvas');
+    canvas.height = 200;
+    div.appendChild(canvas);
+    grid.appendChild(div);
+
+    const vals = state.values.map(r => r[c]);
+    const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
+    const points = [];
+    for (let i = 0; i <= 50; i++) {
+      const x = minV + (i/50)*range;
+      points.push({ x: +x.toFixed(2), y: +mauData.sauFunctions[c](x).toFixed(4) });
+    }
+    const altPts = state.values.map((row, a) => ({ x: row[c], y: mauData.utilities[a][c], label: state.altNames[a] }));
+
+    new Chart(canvas, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          { label: 'SAU Curve', data: points, showLine: true, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.1)', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3 },
+          { label: 'Alternatives', data: altPts.map(p=>({x:p.x,y:p.y})), pointRadius: 6, pointBackgroundColor: '#e74c3c', pointBorderColor: '#c0392b', pointBorderWidth: 2, showLine: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: state.critNames[c]+' ('+state.mauCurves[c].type+')', font: { size: 12 } },
+          tooltip: { callbacks: { label: function(ctx) { if (ctx.datasetIndex===1) return altPts[ctx.dataIndex].label+': ('+ctx.parsed.x+', '+ctx.parsed.y.toFixed(3)+')'; return 'U('+ctx.parsed.x+') = '+ctx.parsed.y.toFixed(3); } } }
+        },
+        scales: { x: { title: { display: true, text: state.critNames[c] } }, y: { title: { display: true, text: 'Utility' }, min: 0, max: 1 } }
+      }
+    });
+  }
+}
+
+// ========== EXCEL EXPORT ==========
+function exportVersionToExcel(id) {
+  const entry = savedVersions.find(v => v.id === id);
+  if (!entry) return;
+
+  // Temporarily load version state, run analysis, export, restore
+  const backup = JSON.parse(JSON.stringify(state, (k,v) => k==='lastResults'?undefined:v instanceof Set?[...v]:v));
+  const s = entry.state;
+  state.numAlts = s.numAlts; state.numCrit = s.numCrit;
+  state.altNames = [...s.altNames]; state.critNames = [...s.critNames];
+  state.weights = [...s.weights]; state.optDir = [...s.optDir];
+  state.values = s.values.map(r => [...r]);
+  state.selectedMethods = new Set(s.selectedMethods || []);
+  state.pughBaseline = s.pughBaseline || 0;
+  state.qfdScores = (s.qfdScores || []).map(r => [...r]);
+  state.mdmMin = [...(s.mdmMin || [])]; state.mdmMax = [...(s.mdmMax || [])];
+  state.mauCurves = (s.mauCurves || []).map(c => ({...c}));
+
+  // Run analysis silently
+  const results = {};
+  if (state.selectedMethods.has('lexicographic')) results.lexicographic = calcLexicographic();
+  if (state.selectedMethods.has('pugh')) results.pugh = calcPugh();
+  if (state.selectedMethods.has('qfd')) results.qfd = calcQFD();
+  if (state.selectedMethods.has('mdm')) results.mdm = calcMDM();
+  if (state.selectedMethods.has('mau')) results.mau = calcMAU();
+  state.lastResults = results;
+
+  const safeName = entry.name.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 40);
+  doExportExcel(safeName || 'analysis');
+
+  // Restore state
+  Object.assign(state, {
+    numAlts: backup.numAlts, numCrit: backup.numCrit,
+    altNames: backup.altNames, critNames: backup.critNames,
+    weights: backup.weights, optDir: backup.optDir,
+    values: backup.values, selectedMethods: new Set(backup.selectedMethods || []),
+    pughBaseline: backup.pughBaseline, qfdScores: backup.qfdScores,
+    mdmMin: backup.mdmMin, mdmMax: backup.mdmMax, mauCurves: backup.mauCurves,
+    lastResults: null
+  });
+}
+
+function exportAllToExcel() {
+  if (!state.lastResults && state.selectedMethods.size === 0) {
+    alert('Run an analysis first, or at least enter data to export.');
+    return;
+  }
+  doExportExcel('tradeoff-analysis');
+}
+
+function doExportExcel(filename) {
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Input Data
+  const inputData = [['Trade-Off Analysis — Input Data'], []];
+  inputData.push(['', ...state.critNames.map((n,c) => n + ' (w=' + state.weights[c] + ', ' + state.optDir[c] + ')')]);
+  for (let a = 0; a < state.numAlts; a++) {
+    inputData.push([state.altNames[a], ...state.values[a]]);
+  }
+  inputData.push([]);
+  inputData.push(['Weights', ...state.weights]);
+  inputData.push(['Goal', ...state.optDir]);
+  const ws1 = XLSX.utils.aoa_to_sheet(inputData);
+  ws1['!cols'] = [{wch:20}, ...state.critNames.map(() => ({wch:18}))];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Input Data');
+
+  // Individual method sheets
+  const results = state.lastResults || {};
+
+  if (results.lexicographic) {
+    const d = results.lexicographic;
+    const rows = [['Lexicographic Method'], [], ['Most important criterion:', state.critNames[d.topCrit]], []];
+    rows.push(['', ...d.critOrder.map(co => state.critNames[co.i] + ' (w=' + state.weights[co.i] + ')'), 'Rank']);
+    for (let a = 0; a < state.numAlts; a++) {
+      rows.push([state.altNames[a], ...d.critOrder.map(co => state.values[a][co.i]), d.ranks[a]]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:20}, ...d.critOrder.map(() => ({wch:18})), {wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Lexicographic');
+  }
+
+  if (results.pugh) {
+    const d = results.pugh;
+    const rows = [['Pugh Method'], [], ['Baseline:', state.altNames[d.baseline]], []];
+    rows.push(['Criterion', ...state.altNames.map((n,a) => n + (a===d.baseline?' (base)':''))]);
+    for (let c = 0; c < state.numCrit; c++) {
+      rows.push([state.critNames[c], ...state.altNames.map((_, a) => d.matrix[a][c])]);
+    }
+    rows.push(['Sum S', ...state.altNames.map((_,a) => d.sums.same[a])]);
+    rows.push(['Sum +', ...state.altNames.map((_,a) => d.sums.plus[a])]);
+    rows.push(['Sum -', ...state.altNames.map((_,a) => d.sums.minus[a])]);
+    rows.push(['Rank', ...state.altNames.map((_,a) => d.ranks[a])]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:20}, ...state.altNames.map(() => ({wch:16}))];
+    XLSX.utils.book_append_sheet(wb, ws, 'Pugh');
+  }
+
+  if (results.qfd) {
+    const d = results.qfd;
+    const rows = [['QFD-like Method'], []];
+    rows.push(['Criterion (weight)', ...state.altNames]);
+    for (let c = 0; c < state.numCrit; c++) {
+      rows.push([state.critNames[c]+' ('+state.weights[c]+')', ...state.altNames.map((_,a) => state.qfdScores[a][c])]);
+    }
+    rows.push(['Sum', ...d.sums]);
+    rows.push(['Weighted Sum', ...d.wtSums]);
+    rows.push(['Rank', ...state.altNames.map((_,a) => d.ranks[a])]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:24}, ...state.altNames.map(() => ({wch:14}))];
+    XLSX.utils.book_append_sheet(wb, ws, 'QFD-like');
+  }
+
+  if (results.mdm) {
+    const d = results.mdm;
+    const rows = [['Modified Decision Matrix'], []];
+    rows.push(['Criterion (weight)', ...state.critNames.map((n,c) => n+' ('+state.weights[c]+', '+state.optDir[c]+')'), 'Score', 'Rank']);
+    for (let a = 0; a < state.numAlts; a++) {
+      rows.push([state.altNames[a], ...d.normalized[a].map(v => +v.toFixed(4)), d.scores[a], d.ranks[a]]);
+    }
+    rows.push([]);
+    rows.push(['Ranges', ...state.critNames.map((n,c) => 'Min='+state.mdmMin[c]+', Max='+state.mdmMax[c])]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:20}, ...state.critNames.map(() => ({wch:18})), {wch:10}, {wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Modified DM');
+  }
+
+  if (results.mau) {
+    const d = results.mau;
+    const rows = [['Multi-Attribute Utility (MAU)'], []];
+    rows.push(['Criterion (weight)', ...state.critNames.map((n,c) => n+' ('+state.weights[c]+')'), 'Score', 'Rank']);
+    for (let a = 0; a < state.numAlts; a++) {
+      rows.push([state.altNames[a], ...d.utilities[a].map(v => +v.toFixed(4)), d.scores[a], d.ranks[a]]);
+    }
+    rows.push([]);
+    rows.push(['Curve Type', ...state.mauCurves.map(c => c.type)]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:20}, ...state.critNames.map(() => ({wch:18})), {wch:10}, {wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, 'MAU');
+  }
+
+  // Comparison sheet
+  if (Object.keys(results).length > 1) {
+    const rows = [['Ranking Comparison'], []];
+    const methods = Object.keys(results);
+    rows.push(['Alternative', ...methods.map(m => methodNames[m]), 'Avg Rank']);
+    for (let a = 0; a < state.numAlts; a++) {
+      const ranks = methods.map(m => results[m].ranks[a]);
+      const avg = +(ranks.reduce((s,v)=>s+v,0)/ranks.length).toFixed(1);
+      rows.push([state.altNames[a], ...ranks, avg]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:20}, ...methods.map(() => ({wch:22})), {wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Comparison');
+  }
+
+  const timestamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `${filename}-${timestamp}.xlsx`);
+}
+
+// ========== INIT ==========
+init();
+</script>
+</body>
+</html>
