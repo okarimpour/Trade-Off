@@ -410,6 +410,26 @@
             <p>The most comprehensive method — captures nonlinear preferences and produces the most nuanced ranking. Requires more effort to define curves. Complexity increases in order: Lexicographic &rarr; Pugh &rarr; QFD &rarr; Modified DM &rarr; MAU.</p>
           </div>
         </div>
+        <div class="method-card" data-method="cpt" onclick="toggleMethod(this)">
+          <div class="check">&#10003;</div>
+          <span class="tag tag-advanced">Advanced</span>
+          <h3>Cumulative Prospect Theory</h3>
+          <p>Asymmetric value function with loss aversion around a reference point.</p>
+          <span class="learn-toggle" onclick="event.stopPropagation();toggleLearn('learnCPT')">Learn more</span>
+          <div class="learn-content" id="learnCPT">
+            <h4>How it works</h4>
+            <ul>
+              <li>For each criterion, set a <strong>reference point</strong> — the neutral anchor (e.g. target value, status quo, or industry benchmark).</li>
+              <li>Values above the reference are <strong>gains</strong>, values below are <strong>losses</strong> (flipped for minimize criteria).</li>
+              <li>A concave power function compresses gains: v(x) = x<sup>&alpha;</sup></li>
+              <li>A steeper convex function amplifies losses: v(x) = &minus;&lambda; &middot; |x|<sup>&beta;</sup></li>
+              <li>Loss aversion (&lambda; &asymp; 2.25) means losses hurt roughly twice as much as equivalent gains.</li>
+              <li>Weighted sum across criteria gives the overall prospect value.</li>
+            </ul>
+            <h4>Strengths & Limitations</h4>
+            <p>Captures how humans actually make decisions — we are more sensitive to losses than gains and exhibit diminishing sensitivity. Requires choosing a meaningful reference point per criterion. Based on Kahneman &amp; Tversky's Nobel Prize-winning research.</p>
+          </div>
+        </div>
       </div>
 
       <div class="btn-group">
@@ -510,6 +530,7 @@ let state = {
   mdmMin: [],
   mdmMax: [],
   mauCurves: [],
+  cptConfig: [],
   lastResults: null
 };
 
@@ -615,6 +636,7 @@ function loadVersion(id) {
   state.mdmMin = [...(s.mdmMin || [])];
   state.mdmMax = [...(s.mdmMax || [])];
   state.mauCurves = (s.mauCurves || []).map(c => ({...c}));
+  state.cptConfig = (s.cptConfig || []).map(c => ({...c}));
 
   state.layout = 'alt-rows';
   activeVersionId = id;
@@ -1316,8 +1338,24 @@ function _buildConfigHTML(resetState) {
     </div>`;
   }
 
+  if (state.selectedMethods.has('cpt')) {
+    if (resetState || !state.cptConfig || state.cptConfig.length !== state.numCrit) {
+      state.cptConfig = state.critNames.map((_, c) => {
+        const vals = state.values.map(r => r[c]);
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        return { refPoint: +avg.toFixed(2), alpha: 0.88, beta: 0.88, lambda: 2.25 };
+      });
+    }
+    html += `<div class="config-panel">
+      <h3>Cumulative Prospect Theory (CPT)</h3>
+      <div class="info-box">Set a reference point per criterion. Values above are gains, below are losses (flipped for minimize). &alpha; shapes gains, &beta; shapes losses, &lambda; is loss aversion.</div>
+      <div id="cptConfig"></div>
+    </div>`;
+  }
+
   if (!state.selectedMethods.has('pugh') && !state.selectedMethods.has('qfd') &&
-      !state.selectedMethods.has('mdm') && !state.selectedMethods.has('mau')) {
+      !state.selectedMethods.has('mdm') && !state.selectedMethods.has('mau') &&
+      !state.selectedMethods.has('cpt')) {
     html += `<div class="info-box">No additional configuration needed. Click "Run Analysis" to see results.</div>`;
   }
 
@@ -1325,6 +1363,7 @@ function _buildConfigHTML(resetState) {
   if (state.selectedMethods.has('qfd')) buildQFDTable();
   if (state.selectedMethods.has('mdm')) buildMDMTable();
   if (state.selectedMethods.has('mau')) buildMAUConfig();
+  if (state.selectedMethods.has('cpt')) buildCPTConfig();
 }
 
 function buildQFDTable() {
@@ -1410,6 +1449,30 @@ function buildMAUConfig() {
   requestAnimationFrame(() => {
     for (let c = 0; c < state.numCrit; c++) drawSAUPreview(c);
   });
+}
+
+function buildCPTConfig() {
+  const container = document.getElementById('cptConfig');
+  let html = '<div style="overflow-x:auto;"><table id="cptTable">';
+  html += '<tr><th>Criterion</th><th>Data Range</th><th>Reference Point</th><th>&alpha; (gains)</th><th>&beta; (losses)</th><th>&lambda; (loss aversion)</th></tr>';
+  for (let c = 0; c < state.numCrit; c++) {
+    const vals = state.values.map(r => r[c]);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const cfg = state.cptConfig[c];
+    html += `<tr>
+      <td style="font-weight:600;text-align:left;">${esc(state.critNames[c])} (${state.optDir[c]})</td>
+      <td style="font-size:0.75rem;color:var(--ink-muted);">${minV} – ${maxV}</td>
+      <td><input type="number" step="any" value="${cfg.refPoint}" onchange="state.cptConfig[${c}].refPoint=parseFloat(this.value)||0" style="width:80px;"></td>
+      <td><input type="number" step="0.01" min="0.01" max="1" value="${cfg.alpha}" onchange="state.cptConfig[${c}].alpha=parseFloat(this.value)||0.88" style="width:70px;"></td>
+      <td><input type="number" step="0.01" min="0.01" max="1" value="${cfg.beta}" onchange="state.cptConfig[${c}].beta=parseFloat(this.value)||0.88" style="width:70px;"></td>
+      <td><input type="number" step="0.25" min="1" max="10" value="${cfg.lambda}" onchange="state.cptConfig[${c}].lambda=parseFloat(this.value)||2.25" style="width:70px;"></td>
+    </tr>`;
+  }
+  html += '</table></div>';
+  html += `<div style="margin-top:0.5rem;font-size:0.68rem;color:var(--ink-muted);">
+    Defaults: &alpha;=&beta;=0.88, &lambda;=2.25 (Tversky &amp; Kahneman, 1992). Reference point defaults to data mean.
+  </div>`;
+  container.innerHTML = html;
 }
 
 function drawSAUPreview(c) {
@@ -1633,6 +1696,7 @@ function runAnalysis() {
   if (state.selectedMethods.has('qfd')) results.qfd = calcQFD();
   if (state.selectedMethods.has('mdm')) results.mdm = calcMDM();
   if (state.selectedMethods.has('mau')) results.mau = calcMAU();
+  if (state.selectedMethods.has('cpt')) results.cpt = calcCPT();
 
   state.lastResults = results;
   renderResults(results);
@@ -1772,8 +1836,46 @@ function calcMAU() {
   return { utilities, scores, ranks, sauFunctions };
 }
 
+function calcCPT() {
+  const prospectValues = [];
+  const cellValues = []; // store per-cell v(x) for display
+  for (let a = 0; a < state.numAlts; a++) {
+    cellValues[a] = [];
+    let totalV = 0;
+    for (let c = 0; c < state.numCrit; c++) {
+      const cfg = state.cptConfig[c];
+      const ref = cfg.refPoint;
+      const alpha = cfg.alpha || 0.88;
+      const beta = cfg.beta || 0.88;
+      const lambda = cfg.lambda || 2.25;
+      const isMax = state.optDir[c] === 'max';
+
+      const raw = state.values[a][c];
+      // For maximize: gain if above ref, loss if below
+      // For minimize: gain if below ref, loss if above
+      const diff = isMax ? (raw - ref) : (ref - raw);
+
+      let v;
+      if (diff >= 0) {
+        // Gain domain
+        v = Math.pow(diff, alpha);
+      } else {
+        // Loss domain — amplified by lambda
+        v = -lambda * Math.pow(Math.abs(diff), beta);
+      }
+      cellValues[a][c] = +v.toFixed(4);
+      totalV += v * state.weights[c];
+    }
+    prospectValues.push(+totalV.toFixed(4));
+  }
+
+  const sorted = prospectValues.map((v, a) => ({ alt: a, score: v })).sort((a, b) => b.score - a.score);
+  const ranks = computeRanks(sorted);
+  return { cellValues, scores: prospectValues, ranks };
+}
+
 // ========== RENDER RESULTS ==========
-const methodNames = { lexicographic:'Lexicographic', pugh:'Pugh', qfd:'QFD-like', mdm:'Modified Decision Matrix', mau:'Multi-Attribute Utility (MAU)' };
+const methodNames = { lexicographic:'Lexicographic', pugh:'Pugh', qfd:'QFD-like', mdm:'Modified Decision Matrix', mau:'Multi-Attribute Utility (MAU)', cpt:'Cumulative Prospect Theory (CPT)' };
 
 function renderResults(results) {
   const container = document.getElementById('resultsContainer');
@@ -1786,6 +1888,7 @@ function renderResults(results) {
     else if (method === 'qfd') html += renderQFDResults(data);
     else if (method === 'mdm') html += renderMDMResults(data);
     else if (method === 'mau') html += renderMAUResults(data);
+    else if (method === 'cpt') html += renderCPTResults(data);
 
     html += '<div style="margin-top:0.75rem;"><strong>Ranking:</strong></div>';
     html += '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.4rem;">';
@@ -1918,6 +2021,26 @@ function renderMAUResults(data) {
   return html;
 }
 
+function renderCPTResults(data) {
+  let html = '<div class="info-box">Prospect values per criterion. Positive = gain, negative = loss (amplified by &lambda;). Score = weighted sum of prospect values.</div>';
+  html += '<div style="overflow-x:auto;"><table><tr><th>Weight</th>';
+  state.weights.forEach(w => html += `<th>${w}</th>`);
+  html += '<th>Prospect V</th><th>Rank</th></tr><tr><td style="font-weight:600;">Criterion</td>';
+  state.critNames.forEach((n, c) => html += `<td>${esc(n)} (ref=${state.cptConfig[c].refPoint})</td>`);
+  html += '<td></td><td></td></tr>';
+  for (let a = 0; a < state.numAlts; a++) {
+    html += `<tr><td style="font-weight:600;text-align:left;">${esc(state.altNames[a])}</td>`;
+    for (let c = 0; c < state.numCrit; c++) {
+      const v = data.cellValues[a][c];
+      const color = v > 0 ? 'var(--ink)' : v < 0 ? 'var(--red)' : 'var(--ink-muted)';
+      html += `<td style="color:${color};">${v.toFixed(3)}</td>`;
+    }
+    html += `<td class="score-cell">${data.scores[a]}</td><td class="rank-cell">${data.ranks[a]}</td></tr>`;
+  }
+  html += '</table></div>';
+  return html;
+}
+
 function renderSAUCharts(mauData) {
   const grid = document.getElementById('chartGrid');
   if (!grid) return;
@@ -1980,6 +2103,7 @@ function exportVersionToExcel(id) {
   state.qfdScores = (s.qfdScores || []).map(r => [...r]);
   state.mdmMin = [...(s.mdmMin || [])]; state.mdmMax = [...(s.mdmMax || [])];
   state.mauCurves = (s.mauCurves || []).map(c => ({...c}));
+  state.cptConfig = (s.cptConfig || []).map(c => ({...c}));
 
   // Run analysis silently
   const results = {};
@@ -1988,6 +2112,7 @@ function exportVersionToExcel(id) {
   if (state.selectedMethods.has('qfd')) results.qfd = calcQFD();
   if (state.selectedMethods.has('mdm')) results.mdm = calcMDM();
   if (state.selectedMethods.has('mau')) results.mau = calcMAU();
+  if (state.selectedMethods.has('cpt')) results.cpt = calcCPT();
   state.lastResults = results;
 
   const safeName = entry.name.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 40);
@@ -2001,7 +2126,7 @@ function exportVersionToExcel(id) {
     values: backup.values, selectedMethods: new Set(backup.selectedMethods || []),
     pughBaseline: backup.pughBaseline, qfdScores: backup.qfdScores,
     mdmMin: backup.mdmMin, mdmMax: backup.mdmMax, mauCurves: backup.mauCurves,
-    lastResults: null
+    cptConfig: backup.cptConfig, lastResults: null
   });
 }
 
@@ -2104,6 +2229,23 @@ function doExportExcel(filename) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:20}, ...state.critNames.map(() => ({wch:18})), {wch:10}, {wch:8}];
     XLSX.utils.book_append_sheet(wb, ws, 'MAU');
+  }
+
+  if (results.cpt) {
+    const d = results.cpt;
+    const rows = [['Cumulative Prospect Theory (CPT)'], []];
+    rows.push(['Criterion (weight)', ...state.critNames.map((n,c) => n+' ('+state.weights[c]+', ref='+state.cptConfig[c].refPoint+')'), 'Prospect V', 'Rank']);
+    for (let a = 0; a < state.numAlts; a++) {
+      rows.push([state.altNames[a], ...d.cellValues[a].map(v => +v.toFixed(4)), d.scores[a], d.ranks[a]]);
+    }
+    rows.push([]);
+    rows.push(['Reference Point', ...state.cptConfig.map(c => c.refPoint)]);
+    rows.push(['Alpha (gains)', ...state.cptConfig.map(c => c.alpha)]);
+    rows.push(['Beta (losses)', ...state.cptConfig.map(c => c.beta)]);
+    rows.push(['Lambda (loss aversion)', ...state.cptConfig.map(c => c.lambda)]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:24}, ...state.critNames.map(() => ({wch:18})), {wch:12}, {wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, 'CPT');
   }
 
   // Comparison sheet
