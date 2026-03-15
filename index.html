@@ -817,7 +817,8 @@ async function loadVersionsFromStore() {
       savedVersions = [];
       return;
     } catch (e) {
-      console.warn('Firestore load failed, using localStorage:', e);
+      console.error('Firestore load FAILED:', e);
+      alert('Cloud load failed: ' + e.message + '\nUsing local data.');
     }
   }
 
@@ -833,15 +834,19 @@ async function loadVersionsFromStore() {
 }
 
 async function persistVersion(entry) {
+  localStorage.setItem(_lsKey(), JSON.stringify(savedVersions));
   if (firestoreEnabled && currentUser && !currentUser.isAnonymous) {
     try {
+      // Clean entry for Firestore (strip undefined values)
+      const clean = JSON.parse(JSON.stringify(entry));
       await db.collection('users').doc(currentUser.uid)
-        .collection('analyses').doc(entry.id).set(entry);
+        .collection('analyses').doc(clean.id).set(clean);
+      console.log('Firestore save OK:', clean.id);
     } catch (e) {
-      console.warn('Firestore save failed:', e);
+      console.error('Firestore save FAILED:', e);
+      alert('Cloud save failed: ' + e.message + '\nData saved locally only.');
     }
   }
-  localStorage.setItem(_lsKey(), JSON.stringify(savedVersions));
 }
 
 async function deleteVersionFromStore(id) {
@@ -857,19 +862,20 @@ async function deleteVersionFromStore(id) {
 }
 
 async function persistAllVersions() {
+  localStorage.setItem(_lsKey(), JSON.stringify(savedVersions));
   if (firestoreEnabled && currentUser && !currentUser.isAnonymous) {
     try {
       const batch = db.batch();
       const colRef = db.collection('users').doc(currentUser.uid).collection('analyses');
       for (const v of savedVersions) {
-        batch.set(colRef.doc(v.id), v);
+        const clean = JSON.parse(JSON.stringify(v));
+        batch.set(colRef.doc(clean.id), clean);
       }
       await batch.commit();
     } catch (e) {
-      console.warn('Firestore batch save failed:', e);
+      console.error('Firestore batch save FAILED:', e);
     }
   }
-  localStorage.setItem(_lsKey(), JSON.stringify(savedVersions));
 }
 
 // ========== ADMIN PANEL ==========
