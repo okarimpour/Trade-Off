@@ -797,7 +797,12 @@ async function loadVersionsFromStore() {
     try {
       const snap = await db.collection('users').doc(currentUser.uid)
         .collection('analyses').orderBy('timestamp', 'desc').get();
-      const fsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const fsData = snap.docs.map(doc => {
+        const d = doc.data();
+        // If stored with stateJson format, deserialize
+        if (d.stateJson) return _fromFirestoreDoc(d);
+        return { id: doc.id, ...d };
+      });
       if (fsData.length > 0) {
         savedVersions = fsData;
         // Sync Firestore data back to localStorage as cache
@@ -810,7 +815,7 @@ async function loadVersionsFromStore() {
         // Push localStorage data to Firestore so it persists
         const batch = db.batch();
         const colRef = db.collection('users').doc(currentUser.uid).collection('analyses');
-        for (const v of lsData) { batch.set(colRef.doc(v.id), v); }
+        for (const v of lsData) { batch.set(colRef.doc(_toFirestoreDoc(v).id), _toFirestoreDoc(v)); }
         await batch.commit().catch(e => console.warn('Migration to Firestore failed:', e));
         return;
       }
@@ -833,15 +838,38 @@ async function loadVersionsFromStore() {
   savedVersions = lsData;
 }
 
+function _toFirestoreDoc(entry) {
+  // Firestore doesn't support nested arrays. Store the state as a JSON string.
+  const doc = {
+    id: entry.id,
+    name: entry.name,
+    baseName: entry.baseName || '',
+    version: entry.version || 1,
+    timestamp: entry.timestamp,
+    stateJson: JSON.stringify(entry.state)
+  };
+  return doc;
+}
+
+function _fromFirestoreDoc(doc) {
+  return {
+    id: doc.id,
+    name: doc.name,
+    baseName: doc.baseName || '',
+    version: doc.version || 1,
+    timestamp: doc.timestamp,
+    state: JSON.parse(doc.stateJson || '{}')
+  };
+}
+
 async function persistVersion(entry) {
   localStorage.setItem(_lsKey(), JSON.stringify(savedVersions));
   if (firestoreEnabled && currentUser && !currentUser.isAnonymous) {
     try {
-      // Clean entry for Firestore (strip undefined values)
-      const clean = JSON.parse(JSON.stringify(entry));
+      const doc = _toFirestoreDoc(entry);
       await db.collection('users').doc(currentUser.uid)
-        .collection('analyses').doc(clean.id).set(clean);
-      console.log('Firestore save OK:', clean.id);
+        .collection('analyses').doc(doc.id).set(doc);
+      console.log('Firestore save OK:', doc.id);
     } catch (e) {
       console.error('Firestore save FAILED:', e);
       alert('Cloud save failed: ' + e.message + '\nData saved locally only.');
@@ -868,8 +896,8 @@ async function persistAllVersions() {
       const batch = db.batch();
       const colRef = db.collection('users').doc(currentUser.uid).collection('analyses');
       for (const v of savedVersions) {
-        const clean = JSON.parse(JSON.stringify(v));
-        batch.set(colRef.doc(clean.id), clean);
+        const doc = _toFirestoreDoc(v);
+        batch.set(colRef.doc(doc.id), doc);
       }
       await batch.commit();
     } catch (e) {
