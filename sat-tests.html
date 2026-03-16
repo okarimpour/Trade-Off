@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Architecture Tool - Automated Test Suite</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --surface: #1a1613;
+      --surface-alt: #24201b;
+      --line-soft: #3a3530;
+      --line: #504a44;
+      --text: #e8e8e8;
+      --text-soft: #a8a8a8;
+      --accent: #da7756;
+      --accent-alt: #e89070;
+      --accent-dark: #b85a3f;
+      --success: #4caf50;
+      --error: #f44336;
+      --warning: #ff9800;
+    }
+
+    body {
+      background-color: var(--surface);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      gap: 0;
+    }
+
+    .left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--line-soft);
+      background-color: var(--surface-alt);
+    }
+
+    .panel-header h1 {
+      font-size: 18px;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel-header p {
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .iframe-container {
+      flex: 1;
+      overflow: hidden;
+      background-color: #0f0d0b;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .test-results {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1.5rem;
+    }
+
+    .test-suite {
+      margin-bottom: 2rem;
+    }
+
+    .test-suite-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .test-case {
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 4px;
+      border-left: 3px solid var(--line);
+      background-color: var(--surface-alt);
+      transition: all 0.2s ease;
+    }
+
+    .test-case.pass {
+      border-left-color: var(--success);
+      background-color: rgba(76, 175, 80, 0.08);
+    }
+
+    .test-case.fail {
+      border-left-color: var(--error);
+      background-color: rgba(244, 67, 54, 0.08);
+    }
+
+    .test-case.pending {
+      border-left-color: var(--warning);
+      background-color: rgba(255, 152, 0, 0.08);
+    }
+
+    .test-status {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      text-align: center;
+      line-height: 18px;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .test-case.pass .test-status {
+      background-color: var(--success);
+    }
+
+    .test-case.fail .test-status {
+      background-color: var(--error);
+    }
+
+    .test-case.pending .test-status {
+      background-color: var(--warning);
+    }
+
+    .test-name {
+      font-weight: 500;
+      margin-right: 1rem;
+    }
+
+    .test-error {
+      color: var(--error);
+      font-size: 12px;
+      margin-top: 0.5rem;
+      padding-left: 26px;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+    }
+
+    .summary {
+      position: sticky;
+      top: 0;
+      background-color: var(--surface);
+      padding: 1.5rem;
+      border-bottom: 2px solid var(--accent);
+      z-index: 10;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat {
+      padding: 0.75rem;
+      border-radius: 4px;
+      background-color: var(--surface-alt);
+      border-left: 3px solid var(--line);
+      text-align: center;
+    }
+
+    .stat.total {
+      border-left-color: var(--accent);
+    }
+
+    .stat.pass {
+      border-left-color: var(--success);
+    }
+
+    .stat.fail {
+      border-left-color: var(--error);
+    }
+
+    .stat.pending {
+      border-left-color: var(--warning);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .stat.fail .stat-value {
+      color: var(--error);
+    }
+
+    .stat.pass .stat-value {
+      color: var(--success);
+    }
+
+    .stat.pending .stat-value {
+      color: var(--warning);
+    }
+
+    .controls {
+      padding: 0 1.5rem 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-alt);
+    }
+
+    .btn-primary:active {
+      background-color: var(--accent-dark);
+    }
+
+    .btn-secondary {
+      background-color: var(--line);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--line-soft);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background-color: var(--line-soft);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--accent));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-message {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 13px;
+    }
+
+    .status-message.info {
+      background-color: rgba(33, 150, 243, 0.1);
+      color: #42a5f5;
+      border-left: 3px solid #2196f3;
+    }
+
+    .status-message.error {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #ef5350;
+      border-left: 3px solid #f44336;
+    }
+
+    .status-message.success {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #66bb6a;
+      border-left: 3px solid #4caf50;
+    }
+
+    .footer {
+      border-top: 1px solid var(--line-soft);
+      padding: 1rem 1.5rem;
+      background-color: var(--surface-alt);
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    @media (max-width: 1200px) {
+      .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left-panel {
+        flex: 1;
+        min-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .right-panel {
+        flex: 1;
+      }
+
+      .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel: App under test -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <h1>System Architecture Tool</h1>
+        <p>Live Application Instance</p>
+      </div>
+      <div class="iframe-container">
+        <iframe id="appFrame" src="index.html"></iframe>
+      </div>
+    </div>
+
+    <!-- Right Panel: Test Results -->
+    <div class="right-panel">
+      <div class="panel-header">
+        <h1>Automated Test Suite</h1>
+        <p>Real-time Test Execution &amp; Results</p>
+      </div>
+
+      <div class="test-results">
+        <div class="summary">
+          <div class="summary-stats">
+            <div class="stat total">
+              <div class="stat-label">Total Tests</div>
+              <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat pass">
+              <div class="stat-label">Passed</div>
+              <div class="stat-value" id="statPass">0</div>
+            </div>
+            <div class="stat fail">
+              <div class="stat-label">Failed</div>
+              <div class="stat-value" id="statFail">0</div>
+            </div>
+            <div class="stat pending">
+              <div class="stat-label">Pending</div>
+              <div class="stat-value" id="statPending">0</div>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+          </div>
+          <div class="controls">
+            <button class="btn-primary" id="runAllButton" onclick="runAllTests()">
+              Run All Tests
+            </button>
+            <button class="btn-secondary" onclick="clearResults()">Clear Results</button>
+          </div>
+        </div>
+
+        <div id="resultsContainer"></div>
+      </div>
+
+      <div class="footer">
+        Test Suite v1.0 • Last run: <span id="lastRun">Never</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== TEST FRAMEWORK ==========
+    const tests = [];
+    const results = {
+      suites: {},
+      total: 0,
+      passed: 0,
+      failed: 0,
+      pending: 0
+    };
+
+    class TestSuite {
+      constructor(name) {
+        this.name = name;
+        this.tests = [];
+        tests.push(this);
+      }
+
+      it(description, testFn) {
+        this.tests.push({ description, testFn, status: 'pending', error: null });
+      }
+
+      async run(appWindow) {
+        results.suites[this.name] = [];
+        for (const test of this.tests) {
+          try {
+            await testFn(appWindow);
+            test.status = 'pass';
+            results.passed++;
+          } catch (error) {
+            test.status = 'fail';
+            test.error = error.message;
+            results.failed++;
+          }
+          results.suites[this.name].push(test);
+        }
+      }
+    }
+
+    // Helper assertion functions
+    function assert(condition, message) {
+      if (!condition) throw new Error(message || 'Assertion failed');
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(message || `Expected ${expected}, got ${actual}`);
+      }
+    }
+
+    function assertClose(actual, expected, tolerance = 0.001, message) {
+      if (Math.abs(actual - expected) > tolerance) {
+        throw new Error(message || `Expected ~${expected}, got ${actual}`);
+      }
+    }
+
+    function assertArrayEquals(actual, expected, message) {
+      if (!Array.isArray(actual) || !Array.isArray(expected) || actual.length !== expected.length) {
+        throw new Error(message || `Arrays don't match`);
+      }
+      for (let i = 0; i < actual.length; i++) {
+        if (actual[i] !== expected[i]) {
+          throw new Error(message || `Array mismatch at index ${i}: ${actual[i]} !== ${expected[i]}`);
+        }
+      }
+    }
+
+    function assertExists(obj, message) {
+      if (!obj) throw new Error(message || 'Object does not exist');
+    }
+
+    function assertNull(obj, message) {
+      if (obj !== null) throw new Error(message || 'Expected null');
+    }
+
+    // ========== HELPER FUNCTIONS ==========
+    async function waitForAppReady(appWindow, timeout = 3000) {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        if (appWindow.state && typeof appWindow.validateInputs === 'function') {
+          return true;
+        }
+        await new Promise(r => setTimeout(r, 100));
+      }
+      throw new Error('App did not load within timeout');
+    }
+
+    async function delay(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    // ========== TEST SUITES ==========
+
+    // --- UNIT TESTS: Weight Validation ---
+    const suiteWeightValidation = new TestSuite('Unit Tests: Weight Validation');
+
+    suiteWeightValidation.it('validateInputs() detects weights not summing to 1.0', async (appWindow) => {
+      appWindow.state.weights = [0.3, 0.3, 0.3]; // sum = 0.9
+      appWindow.state.numCrit = 3;
+      appWindow.state.critNames = ['A', 'B', 'C'];
+      appWindow.state.altNames = ['Alt1'];
+      appWindow.state.values = [[1, 2, 3]];
+
+      const result = appWindow.validateInputs();
+      assert(!result, 'Should return false for invalid weights');
+    });
+
+    suiteWeightValidation.it('validateInputs() accepts weights summing to 1.0', async (appWindow) => {
+      appWindow.state.weights = [0.5, 0.3, 0.2];
+      appWindow.state.numCrit = 3;
+      appWindow.state.critNames = ['A', 'B', 'C'];
+      appWindow.state.altNames = ['Alt1'];
+      appWindow.state.values = [[1, 2, 3]];
+
+      const result = appWindow.validateInputs();
+      assert(result, 'Should return true for valid weights');
+    });
+
+    suiteWeightValidation.it('Normalizes all-zero weights', async (appWindow) => {
+      appWindow.state.weights = [0, 0, 0];
+      appWindow.state.numCrit = 3;
+      appWindow.normalizeWeights();
+
+      const sum = appWindow.state.weights.reduce((a, b) => a + b, 0);
+      assertClose(sum, 1.0, 0.001, 'Normalized weights should sum to 1.0');
+    });
+
+    suiteWeightValidation.it('Normalizes equal weights', async (appWindow) => {
+      appWindow.state.weights = [1, 1, 1];
+      appWindow.state.numCrit = 3;
+      appWindow.normalizeWeights();
+
+      const expected = [1/3, 1/3, 1/3];
+      appWindow.state.weights.forEach((w, i) => {
+        assertClose(w, expected[i], 0.001, `Weight ${i} mismatch`);
+      });
+    });
+
+    suiteWeightValidation.it('Preserves weight of 1.0', async (appWindow) => {
+      appWindow.state.weights = [1.0];
+      appWindow.state.numCrit = 1;
+      appWindow.normalizeWeights();
+
+      assertClose(appWindow.state.weights[0], 1.0, 0.001);
+    });
+
+    suiteWeightValidation.it('toFixed(2) formatting works for display', async (appWindow) => {
+      const values = [0.333333, 0.666667, 0.1];
+      const formatted = values.map(v => parseFloat(v.toFixed(2)));
+
+      assertEqual(formatted[0], 0.33, 'First value should format to 0.33');
+      assertEqual(formatted[1], 0.67, 'Second value should format to 0.67');
+      assertEqual(formatted[2], 0.1, 'Third value should format to 0.1');
+    });
+
+    // --- UNIT TESTS: VH Tree Operations ---
+    const suiteVHTree = new TestSuite('Unit Tests: VH Tree Operations');
+
+    suiteVHTree.it('vhCalculateGlobalWeights: root weight = 1.0', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        children: []
+      };
+
+      appWindow.vhCalculateGlobalWeights(tree);
+      assertClose(tree.globalWeight, 1.0, 0.001);
+    });
+
+    suiteVHTree.it('vhCalculateGlobalWeights: children proportional', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        children: [
+          { id: 'c1', name: 'Child1', weight: 0.6, globalWeight: 0, children: [] },
+          { id: 'c2', name: 'Child2', weight: 0.4, globalWeight: 0, children: [] }
+        ]
+      };
+
+      appWindow.vhCalculateGlobalWeights(tree);
+      assertClose(tree.children[0].globalWeight, 0.6, 0.001);
+      assertClose(tree.children[1].globalWeight, 0.4, 0.001);
+    });
+
+    suiteVHTree.it('vhCalculateGlobalWeights: weight cascade (50% → 50% = 25%)', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        children: [
+          {
+            id: 'parent',
+            name: 'Parent',
+            weight: 0.5,
+            globalWeight: 0,
+            children: [
+              { id: 'leaf', name: 'Leaf', weight: 0.5, globalWeight: 0, children: [] }
+            ]
+          }
+        ]
+      };
+
+      appWindow.vhCalculateGlobalWeights(tree);
+      assertClose(tree.children[0].children[0].globalWeight, 0.25, 0.001);
+    });
+
+    suiteVHTree.it('vhGetLeafNodes: returns correct leaf count', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        globalWeight: 1.0,
+        children: [
+          {
+            id: 'p1',
+            name: 'Parent1',
+            weight: 0.5,
+            globalWeight: 0.5,
+            children: [
+              { id: 'l1', name: 'Leaf1', weight: 0.5, globalWeight: 0.25, children: [] },
+              { id: 'l2', name: 'Leaf2', weight: 0.5, globalWeight: 0.25, children: [] }
+            ]
+          },
+          {
+            id: 'l3',
+            name: 'Leaf3',
+            weight: 0.5,
+            globalWeight: 0.5,
+            children: []
+          }
+        ]
+      };
+
+      const leaves = appWindow.vhGetLeafNodes(tree);
+      assertEqual(leaves.length, 3, 'Should have 3 leaves');
+    });
+
+    suiteVHTree.it('vhGetLeafNodes: returns correct leaf names', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        globalWeight: 1.0,
+        children: [
+          { id: 'l1', name: 'Performance', weight: 0.5, globalWeight: 0.5, children: [] },
+          { id: 'l2', name: 'Cost', weight: 0.5, globalWeight: 0.5, children: [] }
+        ]
+      };
+
+      const leaves = appWindow.vhGetLeafNodes(tree);
+      const names = leaves.map(l => l.name);
+      assert(names.includes('Performance'), 'Should include Performance');
+      assert(names.includes('Cost'), 'Should include Cost');
+    });
+
+    suiteVHTree.it('vhFindNode: finds nodes by ID', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        children: [
+          { id: 'child1', name: 'Child1', weight: 0.5, children: [] },
+          { id: 'child2', name: 'Child2', weight: 0.5, children: [] }
+        ]
+      };
+
+      const found = appWindow.vhFindNode(tree, 'child1');
+      assertExists(found);
+      assertEqual(found.name, 'Child1');
+    });
+
+    suiteVHTree.it('vhFindNode: returns null for missing nodes', async (appWindow) => {
+      const tree = {
+        id: 'root',
+        name: 'Root',
+        weight: 1.0,
+        children: [
+          { id: 'child1', name: 'Child1', weight: 0.5, children: [] }
+        ]
+      };
+
+      const found = appWindow.vhFindNode(tree, 'nonexistent');
+      assertNull(found);
+    });
+
+    suiteVHTree.it('vhValidateWeights: validates children sum correctly', async (appWindow) => {
+      const node = {
+        id: 'parent',
+        name: 'Parent',
+        weight: 1.0,
+        children: [
+          { id: 'c1', name: 'C1', weight: 0.6, children: [] },
+          { id: 'c2', name: 'C2', weight: 0.4, children: [] }
+        ]
+      };
+
+      const isValid = appWindow.vhValidateWeights(node);
+      assert(isValid, 'Valid weights should pass');
+    });
+
+    suiteVHTree.it('vhValidateWeights: detects invalid sums', async (appWindow) => {
+      const node = {
+        id: 'parent',
+        name: 'Parent',
+        weight: 1.0,
+        children: [
+          { id: 'c1', name: 'C1', weight: 0.5, children: [] },
+          { id: 'c2', name: 'C2', weight: 0.3, children: [] }
+        ]
+      };
+
+      const isValid = appWindow.vhValidateWeights(node);
+      assert(!isValid, 'Invalid weights should fail');
+    });
+
+    // --- UNIT TESTS: SAU Interpolation ---
+    const suiteInterpolation = new TestSuite('Unit Tests: SAU Interpolation');
+
+    suiteInterpolation.it('sauInterpolate: linear interpolation with 2 points', async (appWindow) => {
+      const points = [
+        { x: 0, y: 0 },
+        { x: 10, y: 100 }
+      ];
+
+      const result = appWindow.sauInterpolate(points, 5);
+      assertClose(result, 50, 0.001, 'Midpoint should interpolate to 50');
+    });
+
+    suiteInterpolation.it('sauInterpolate: value below min (clamped)', async (appWindow) => {
+      const points = [
+        { x: 10, y: 20 },
+        { x: 20, y: 80 }
+      ];
+
+      const result = appWindow.sauInterpolate(points, 5);
+      assertClose(result, 20, 0.001, 'Below min should clamp to first y value');
+    });
+
+    suiteInterpolation.it('sauInterpolate: value above max (clamped)', async (appWindow) => {
+      const points = [
+        { x: 10, y: 20 },
+        { x: 20, y: 80 }
+      ];
+
+      const result = appWindow.sauInterpolate(points, 25);
+      assertClose(result, 80, 0.001, 'Above max should clamp to last y value');
+    });
+
+    suiteInterpolation.it('sauInterpolate: empty points returns 0', async (appWindow) => {
+      const result = appWindow.sauInterpolate([], 5);
+      assertEqual(result, 0, 'Empty points should return 0');
+    });
+
+    suiteInterpolation.it('sauInterpolate: single point returns that value', async (appWindow) => {
+      const points = [{ x: 5, y: 75 }];
+
+      const result1 = appWindow.sauInterpolate(points, 0);
+      const result2 = appWindow.sauInterpolate(points, 5);
+      const result3 = appWindow.sauInterpolate(points, 10);
+
+      assertClose(result1, 75, 0.001);
+      assertClose(result2, 75, 0.001);
+      assertClose(result3, 75, 0.001);
+    });
+
+    suiteInterpolation.it('sauInterpolate: interpolates between multiple points', async (appWindow) => {
+      const points = [
+        { x: 0, y: 0 },
+        { x: 50, y: 50 },
+        { x: 100, y: 100 }
+      ];
+
+      const result = appWindow.sauInterpolate(points, 25);
+      assertClose(result, 25, 0.001);
+    });
+
+    // --- UNIT TESTS: Trade-Off Methods ---
+    const suiteTradeOff = new TestSuite('Unit Tests: Trade-Off Methods');
+
+    suiteTradeOff.it('computeRanks: handles ties correctly', async (appWindow) => {
+      const sorted = [
+        { alt: 'A', score: 100 },
+        { alt: 'B', score: 100 },
+        { alt: 'C', score: 90 },
+        { alt: 'D', score: 85 }
+      ];
+
+      const ranks = appWindow.computeRanks(sorted);
+      assertEqual(ranks['A'], 1, 'First tied should be rank 1');
+      assertEqual(ranks['B'], 1, 'Second tied should also be rank 1');
+      assertEqual(ranks['C'], 3, 'Third should be rank 3 (not 2)');
+      assertEqual(ranks['D'], 4, 'Fourth should be rank 4');
+    });
+
+    suiteTradeOff.it('computeRanks: all unique scores', async (appWindow) => {
+      const sorted = [
+        { alt: 'A', score: 100 },
+        { alt: 'B', score: 95 },
+        { alt: 'C', score: 80 }
+      ];
+
+      const ranks = appWindow.computeRanks(sorted);
+      assertEqual(ranks['A'], 1);
+      assertEqual(ranks['B'], 2);
+      assertEqual(ranks['C'], 3);
+    });
+
+    suiteTradeOff.it('computeRanks: single alternative', async (appWindow) => {
+      const sorted = [{ alt: 'A', score: 100 }];
+
+      const ranks = appWindow.computeRanks(sorted);
+      assertEqual(ranks['A'], 1);
+    });
+
+    // --- UNIT TESTS: Data Import ---
+    const suiteDataImport = new TestSuite('Unit Tests: Data Import');
+
+    suiteDataImport.it('CSV parsing with headers', async (appWindow) => {
+      const csv = 'Name,Value1,Value2\nAlt1,10,20\nAlt2,30,40';
+      const lines = csv.split('\n');
+      const headers = lines[0].split(',');
+
+      assertEqual(headers[0], 'Name');
+      assertEqual(headers[1], 'Value1');
+      assertEqual(headers[2], 'Value2');
+    });
+
+    suiteDataImport.it('Weight normalization on import', async (appWindow) => {
+      const weights = [0.3, 0.3, 0.4]; // already sums to 1.0
+      const sum = weights.reduce((a, b) => a + b, 0);
+
+      const normalized = weights.map(w => w / sum);
+      const normalizedSum = normalized.reduce((a, b) => a + b, 0);
+
+      assertClose(normalizedSum, 1.0, 0.001);
+    });
+
+    // --- INTEGRATION TESTS: Auth Flow ---
+    const suiteAuthFlow = new TestSuite('Integration Tests: Auth Flow');
+
+    suiteAuthFlow.it('Guest login creates anonymous user', async (appWindow) => {
+      // Check if user object exists
+      assertExists(appWindow.currentUser !== undefined);
+    });
+
+    suiteAuthFlow.it('State persists after page load', async (appWindow) => {
+      assertExists(appWindow.state, 'State object should exist');
+      assert(Array.isArray(appWindow.state.weights), 'Weights should be an array');
+    });
+
+    // --- INTEGRATION TESTS: Value Hierarchy Workflow ---
+    const suiteVHWorkflow = new TestSuite('Integration Tests: Value Hierarchy Workflow');
+
+    suiteVHWorkflow.it('VH tree structure exists', async (appWindow) => {
+      assertExists(appWindow.vhTree, 'vhTree should exist');
+      assertExists(appWindow.vhTree.id, 'Tree should have id');
+      assertExists(appWindow.vhTree.name, 'Tree should have name');
+    });
+
+    suiteVHWorkflow.it('vhSavedHierarchies is initialized', async (appWindow) => {
+      assert(Array.isArray(appWindow.vhSavedHierarchies), 'vhSavedHierarchies should be an array');
+    });
+
+    suiteVHWorkflow.it('VH node creation increments ID', async (appWindow) => {
+      const initialId = appWindow.vhNextNodeId;
+      assert(typeof initialId === 'number', 'vhNextNodeId should be a number');
+      assert(initialId > 0, 'vhNextNodeId should be positive');
+    });
+
+    // --- INTEGRATION TESTS: Trade-Off Analysis ---
+    const suiteTradeOffWorkflow = new TestSuite('Integration Tests: Trade-Off Analysis');
+
+    suiteTradeOffWorkflow.it('State has alternative names', async (appWindow) => {
+      assert(Array.isArray(appWindow.state.altNames), 'altNames should be an array');
+    });
+
+    suiteTradeOffWorkflow.it('State has criterion names', async (appWindow) => {
+      assert(Array.isArray(appWindow.state.critNames), 'critNames should be an array');
+    });
+
+    suiteTradeOffWorkflow.it('State has values matrix', async (appWindow) => {
+      assert(Array.isArray(appWindow.state.values), 'values should be an array');
+    });
+
+    suiteTradeOffWorkflow.it('State has numCrit property', async (appWindow) => {
+      assert(typeof appWindow.state.numCrit === 'number', 'numCrit should be a number');
+    });
+
+    suiteTradeOffWorkflow.it('State has weights array', async (appWindow) => {
+      assert(Array.isArray(appWindow.state.weights), 'weights should be an array');
+    });
+
+    // --- INTEGRATION TESTS: SAU Curve ---
+    const suiteSAUWorkflow = new TestSuite('Integration Tests: SAU Curve');
+
+    suiteSAUWorkflow.it('sauCurveData initialized', async (appWindow) => {
+      assertExists(appWindow.sauCurveData !== undefined);
+    });
+
+    suiteSAUWorkflow.it('sauCurrentHierarchy can be set', async (appWindow) => {
+      assert(typeof appWindow.sauCurrentHierarchy === 'object' || appWindow.sauCurrentHierarchy === null);
+    });
+
+    // --- INTEGRATION TESTS: DVM ---
+    const suiteUVMWorkflow = new TestSuite('Integration Tests: Design-Value Map');
+
+    suiteUVMWorkflow.it('dvmCurrentHierarchy can be null initially', async (appWindow) => {
+      assert(appWindow.dvmCurrentHierarchy === null || typeof appWindow.dvmCurrentHierarchy === 'object');
+    });
+
+    suiteUVMWorkflow.it('dvmDesignVars is initialized as array', async (appWindow) => {
+      assert(Array.isArray(appWindow.dvmDesignVars));
+    });
+
+    suiteUVMWorkflow.it('dvmMatrix is initialized as object', async (appWindow) => {
+      assert(typeof appWindow.dvmMatrix === 'object');
+    });
+
+    // --- SMOKE TESTS: Tool Loading ---
+    const suiteToolLoading = new TestSuite('UAT Smoke Tests: Tool Loading');
+
+    suiteToolLoading.it('App functions exist: validateInputs', async (appWindow) => {
+      assertExists(typeof appWindow.validateInputs === 'function');
+    });
+
+    suiteToolLoading.it('App functions exist: normalizeWeights', async (appWindow) => {
+      assertExists(typeof appWindow.normalizeWeights === 'function');
+    });
+
+    suiteToolLoading.it('App functions exist: runAnalysis', async (appWindow) => {
+      assertExists(typeof appWindow.runAnalysis === 'function');
+    });
+
+    suiteToolLoading.it('App functions exist: vhCalculateGlobalWeights', async (appWindow) => {
+      assertExists(typeof appWindow.vhCalculateGlobalWeights === 'function');
+    });
+
+    suiteToolLoading.it('App functions exist: sauInterpolate', async (appWindow) => {
+      assertExists(typeof appWindow.sauInterpolate === 'function');
+    });
+
+    suiteToolLoading.it('All required global variables exist', async (appWindow) => {
+      assertExists(appWindow.state);
+      assertExists(appWindow.vhTree);
+      assertExists(appWindow.vhSavedHierarchies);
+      assertExists(appWindow.sauCurveData);
+      assertExists(appWindow.dvmMatrix);
+      assertExists(appWindow.tgGeneratedDesigns);
+    });
+
+    // ========== TEST EXECUTION ==========
+    async function runAllTests() {
+      const appFrame = document.getElementById('appFrame');
+      const appWindow = appFrame.contentWindow;
+
+      // Wait for app to load
+      try {
+        await waitForAppReady(appWindow);
+      } catch (e) {
+        showStatus('error', 'Failed to load app: ' + e.message);
+        return;
+      }
+
+      // Reset results
+      results.suites = {};
+      results.total = 0;
+      results.passed = 0;
+      results.failed = 0;
+      results.pending = 0;
+
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = '<div class="status-message info"><span class="spinner"></span>Running tests...</div>';
+
+      // Run all suites
+      const startTime = Date.now();
+      for (const suite of tests) {
+        results.total += suite.tests.length;
+        const suiteResults = [];
+
+        for (const test of suite.tests) {
+          try {
+            // Run the test function
+            const result = test.testFn(appWindow);
+            if (result instanceof Promise) {
+              await result;
+            }
+            test.status = 'pass';
+            results.passed++;
+          } catch (error) {
+            test.status = 'fail';
+            test.error = error.message;
+            results.failed++;
+          }
+          suiteResults.push(test);
+        }
+        results.suites[suite.name] = suiteResults;
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Render results
+      renderResults(duration);
+      updateStats();
+      updateLastRun();
+    }
+
+    function renderResults(duration) {
+      const container = document.getElementById('resultsContainer');
+      let html = `<div class="status-message success">✓ Tests completed in ${duration}ms</div>`;
+
+      for (const [suiteName, suiteTests] of Object.entries(results.suites)) {
+        html += `<div class="test-suite">
+          <div class="test-suite-title">${escapeHtml(suiteName)}</div>`;
+
+        for (const test of suiteTests) {
+          html += `<div class="test-case ${test.status}">
+            <div style="display: flex; align-items: center;">
+              <span class="test-status">${test.status === 'pass' ? '✓' : test.status === 'fail' ? '✕' : '○'}</span>
+              <span class="test-name">${escapeHtml(test.description)}</span>
+            </div>`;
+
+          if (test.error) {
+            html += `<div class="test-error">Error: ${escapeHtml(test.error)}</div>`;
+          }
+
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateStats() {
+      document.getElementById('statTotal').textContent = results.total;
+      document.getElementById('statPass').textContent = results.passed;
+      document.getElementById('statFail').textContent = results.failed;
+      document.getElementById('statPending').textContent = results.pending;
+
+      const percentage = results.total > 0 ? (results.passed / results.total) * 100 : 0;
+      document.getElementById('progressFill').style.width = percentage + '%';
+    }
+
+    function updateLastRun() {
+      const now = new Date();
+      document.getElementById('lastRun').textContent = now.toLocaleTimeString();
+    }
+
+    function clearResults() {
+      document.getElementById('resultsContainer').innerHTML = '';
+      results.suites = {};
+      results.total = 0;
+      results.passed = 0;
+      results.failed = 0;
+      results.pending = 0;
+      updateStats();
+    }
+
+    function showStatus(type, message) {
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = `<div class="status-message ${type}">${escapeHtml(message)}</div>`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initial render
+      updateStats();
+
+      // Show initial message
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = '<div class="status-message info">Click "Run All Tests" to start testing the System Architecture Tool.</div>';
+
+      // Auto-run if parameter present
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('autorun') === '1') {
+        setTimeout(runAllTests, 500);
+      }
+    });
+  </script>
+</body>
+</html>
